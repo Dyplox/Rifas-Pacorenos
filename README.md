@@ -7,12 +7,12 @@ Esta es una aplicación web moderna para realizar sorteos y rifas digitales de m
 -   **Sorteo Dinámico**: Animación de "barajado" de números para generar tensión.
 -   **Modos de Revelación**:
     -   *Tradicional*: Revela el ganador completo automáticamente.
-    -   *Paso a Paso*: Revela dígito por dígito para mayor suspense (configurable).
+    -   *Paso a Paso*: Revela dígito por dígito para mayor suspense (desactivable).
 -   **Celebración "Super"**:
     -   Confeti dorado desde cañones laterales.
     -   Globos flotantes con física realista.
     -   Fuegos artificiales circulares.
--   **Historial**: Sidebar lateral con el registro de los últimos ganadores.
+-   **Historial**: Sidebar lateral con el historial de los últimos ganadores.
 -   **Diseño Responsivo**: Adaptable a pantallas grandes (proyectores) y dispositivos móviles.
 -   **Configurable**: Ajuste de cantidad de dígitos (1-5) y modalidad.
 
@@ -21,7 +21,7 @@ Esta es una aplicación web moderna para realizar sorteos y rifas digitales de m
 -   **React 19**: Lógica de componentes y estado.
 -   **Vite**: Entorno de desarrollo ultrarrápido.
 -   **PNPM**: Gestión eficiente de dependencias.
--   **Canvas Confetti**: Efectos de partículas de alto rendimiento.
+-   **Canvas Confetti**: Efectos de partículas.
 
 ## Instalación y Uso
 
