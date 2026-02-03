@@ -1,6 +1,6 @@
-# Gran Rifa App 🏆
+# 🏆 Gran Rifa App 🏆
 
-Esta es una aplicación web moderna para realizar sorteos y rifas digitales de manera emocionante y visual. Construida con React y Vite, diseñada para eventos en vivo con animaciones de celebración premium.
+Esta es una aplicación web moderna para realizar sorteos y rifas digitales de manera emocionante y visual. Construida con React y Vite, diseñada para eventos en vivo con animaciones de celebración de colores doradas para emocionar al ganador.
 
 ## Características
 
@@ -27,8 +27,8 @@ Esta es una aplicación web moderna para realizar sorteos y rifas digitales de m
 
 1.  **Clonar el repositorio**:
     ```bash
-    git clone <url-del-repo>
-    cd gran-rifa
+    git clone https://github.com/Dyplox/raflle-app.git
+    cd raffle-app
     ```
 
 2.  **Instalar dependencias**:
