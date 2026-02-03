@@ -1,8 +1,22 @@
-import React, { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useRaffle } from '../context/RaffleContext';
 
-const RaffleHistory = () => {
+const RaffleHistory = memo(() => {
     const { history } = useRaffle();
+
+    const renderHistoryItem = useCallback((record, index) => (
+        <div
+            key={record.id}
+            className={`history-item ${index === 0 ? 'latest' : ''}`}
+        >
+            <span className="history-number">
+                {record.number}
+            </span>
+            <span className="history-time">
+                {record.timestamp}
+            </span>
+        </div>
+    ), []);
 
     return (
         <aside className="history-sidebar">
@@ -12,19 +26,7 @@ const RaffleHistory = () => {
 
             <div className="history-list">
                 {history && history.length > 0 ? (
-                    history.map((record, index) => (
-                        <div
-                            key={record.id}
-                            className={`history-item ${index === 0 ? 'latest' : ''}`}
-                        >
-                            <span className="history-number">
-                                {record.number}
-                            </span>
-                            <span className="history-time">
-                                {record.timestamp}
-                            </span>
-                        </div>
-                    ))
+                    history.map(renderHistoryItem)
                 ) : (
                     <div className="history-empty">
                         Aún no hay resultados
@@ -33,6 +35,8 @@ const RaffleHistory = () => {
             </div>
         </aside>
     );
-};
+});
 
-export default memo(RaffleHistory);
+RaffleHistory.displayName = 'RaffleHistory';
+
+export default RaffleHistory;

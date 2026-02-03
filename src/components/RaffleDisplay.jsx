@@ -1,59 +1,70 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { useRaffle } from '../context/RaffleContext';
 
-const RaffleDisplay = () => {
+const RaffleDisplay = memo(() => {
     const { digitCount, isRaffling, winner, revealedCount } = useRaffle();
-    // State only for the shuffling animation
     const [shuffleDigits, setShuffleDigits] = useState('');
 
     // Handle shuffling animation
     useEffect(() => {
-        let interval;
-        if (isRaffling) {
-            interval = setInterval(() => {
-                let randomStr = '';
-                for (let i = 0; i < digitCount; i++) {
-                    randomStr += Math.floor(Math.random() * 10).toString();
-                }
-                setShuffleDigits(randomStr);
-            }, 60);
-        }
+        if (!isRaffling) return;
+
+        const interval = setInterval(() => {
+            let randomStr = '';
+            for (let i = 0; i < digitCount; i++) {
+                randomStr += Math.floor(Math.random() * 10).toString();
+            }
+            setShuffleDigits(randomStr);
+        }, 60);
+
         return () => clearInterval(interval);
     }, [isRaffling, digitCount]);
 
-    const getDigitContent = (idx) => {
-        // 1. If winner is present and this digit is revealed, show it
-        if (winner && idx < revealedCount) {
-            return winner[idx];
-        }
+    const isWinnerRevealed = winner && !isRaffling && revealedCount === digitCount;
 
-        // 2. If currently raffling (and not revealed yet), show random shuffle digit
-        if (isRaffling) {
-            return shuffleDigits[idx] || '*';
-        }
+    const containerClassName = useMemo(() =>
+        `digit-container ${isWinnerRevealed ? 'winner' : ''}`,
+        [isWinnerRevealed]
+    );
 
-        // 3. Otherwise (before raffle or unrevealed), show mask
-        return '*';
-    };
+    // Memoize digit boxes to prevent unnecessary recalculations
+    const digitBoxes = useMemo(() =>
+        Array.from({ length: digitCount }).map((_, idx) => {
+            let content;
 
-    const containerClassName = useMemo(() => {
-        const isWinnerRevealed = winner && !isRaffling && revealedCount === digitCount;
-        return `digit-container ${isWinnerRevealed ? 'winner' : ''}`;
-    }, [winner, isRaffling, revealedCount, digitCount]);
+            // If winner is present and this digit is revealed, show it
+            if (winner && idx < revealedCount) {
+                content = winner[idx];
+            }
+            // If currently raffling (and not revealed yet), show random shuffle digit
+            else if (isRaffling) {
+                content = shuffleDigits[idx] || '*';
+            }
+            // Otherwise (before raffle or unrevealed), show mask
+            else {
+                content = '*';
+            }
 
-    return (
-        <div className={containerClassName}>
-            {Array.from({ length: digitCount }).map((_, idx) => (
+            return (
                 <div
                     key={idx}
                     className="digit-box"
                     style={{ animationDelay: `${idx * 0.1}s` }}
                 >
-                    {getDigitContent(idx)}
+                    {content}
                 </div>
-            ))}
+            );
+        }),
+        [digitCount, winner, revealedCount, isRaffling, shuffleDigits]
+    );
+
+    return (
+        <div className={containerClassName}>
+            {digitBoxes}
         </div>
     );
-};
+});
+
+RaffleDisplay.displayName = 'RaffleDisplay';
 
 export default RaffleDisplay;

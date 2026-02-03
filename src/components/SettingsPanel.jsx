@@ -1,31 +1,63 @@
+import { memo, useState, useEffect, useCallback } from 'react';
 import { useRaffle } from '../context/RaffleContext';
-import { useState, useEffect } from 'react';
 
-const SettingsPanel = ({ isOpen, onClose }) => {
+const SettingsPanel = memo(({ isOpen, onClose }) => {
     const {
         digitCount, setDigitCount,
         isRaffling, resetRaffle,
-        isManualRevealEnabled, setIsManualRevealEnabled
+        isManualRevealEnabled, setIsManualRevealEnabled,
+        countdownDuration, setCountdownDuration,
+        isCountdownEnabled, setIsCountdownEnabled,
+        clearHistory
     } = useRaffle();
 
     const [inputValue, setInputValue] = useState(digitCount);
+    const [countdownInputValue, setCountdownInputValue] = useState(countdownDuration);
 
     useEffect(() => {
         setInputValue(digitCount);
     }, [digitCount]);
 
-    if (!isOpen) return null;
+    useEffect(() => {
+        setCountdownInputValue(countdownDuration);
+    }, [countdownDuration]);
 
-    const handleChange = (e) => {
+    const handleChange = useCallback((e) => {
         const value = e.target.value;
         setInputValue(value);
 
-        const val = parseInt(value);
+        const val = parseInt(value, 10);
         if (value !== '' && !isNaN(val) && val >= 1 && val <= 5) {
             setDigitCount(val);
             resetRaffle();
         }
-    };
+    }, [setDigitCount, resetRaffle]);
+
+    const handleCountdownChange = useCallback((e) => {
+        const value = e.target.value;
+        setCountdownInputValue(value);
+
+        const val = parseInt(value, 10);
+        if (value !== '' && !isNaN(val) && val >= 1 && val <= 10) {
+            setCountdownDuration(val);
+        }
+    }, [setCountdownDuration]);
+
+    const handleManualRevealChange = useCallback((e) => {
+        setIsManualRevealEnabled(e.target.checked);
+    }, [setIsManualRevealEnabled]);
+
+    const handleCountdownEnabledChange = useCallback((e) => {
+        setIsCountdownEnabled(e.target.checked);
+    }, [setIsCountdownEnabled]);
+
+    const handleClearHistory = useCallback(() => {
+        if (window.confirm('¿Estás seguro de que deseas borrar todo el historial?')) {
+            clearHistory();
+        }
+    }, [clearHistory]);
+
+    if (!isOpen) return null;
 
     return (
         <div className="settings-overlay" onClick={onClose}>
@@ -50,16 +82,64 @@ const SettingsPanel = ({ isOpen, onClose }) => {
                         </span>
                     </div>
 
+                    <div className="settings-field" style={{ marginTop: '2rem' }}>
+                        <label className="checkbox-label">
+                            <input
+                                type="checkbox"
+                                checked={isCountdownEnabled}
+                                onChange={handleCountdownEnabledChange}
+                                disabled={isRaffling}
+                            />
+                            Activar Conteo Regresivo
+                        </label>
+
+                        {isCountdownEnabled && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem', paddingLeft: '1.5rem' }}>
+                                <label className="field-label" style={{ margin: 0, minWidth: 'auto' }}>
+                                    Segundos:
+                                </label>
+                                <input
+                                    type="number"
+                                    value={countdownInputValue}
+                                    onChange={handleCountdownChange}
+                                    min="1"
+                                    max="10"
+                                    disabled={isRaffling}
+                                    style={{ width: '70px' }}
+                                />
+                            </div>
+                        )}
+                    </div>
+
                     <div style={{ marginTop: '2rem' }}>
                         <label className="checkbox-label">
                             <input
                                 type="checkbox"
                                 checked={isManualRevealEnabled}
-                                onChange={(e) => setIsManualRevealEnabled(e.target.checked)}
+                                onChange={handleManualRevealChange}
                                 disabled={isRaffling}
                             />
                             Revelación por Dígito (Manual)
                         </label>
+                    </div>
+
+                    <div style={{ marginTop: '2.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+                        <button
+                            className="btn-secondary"
+                            style={{
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                color: '#f87171',
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                width: '100%',
+                                padding: '0.8rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onClick={handleClearHistory}
+                        >
+                            🗑️ Borrar Historial de Sorteos
+                        </button>
                     </div>
                 </div>
 
@@ -75,6 +155,8 @@ const SettingsPanel = ({ isOpen, onClose }) => {
             </div>
         </div>
     );
-};
+});
+
+SettingsPanel.displayName = 'SettingsPanel';
 
 export default SettingsPanel;

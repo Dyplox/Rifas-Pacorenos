@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react';
-import confetti from 'canvas-confetti';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { RaffleProvider, useRaffle } from './context/RaffleContext';
+import { runWinnerCelebration } from './utils/confettiEffects';
 import Layout from './components/Layout';
 import RaffleDisplay from './components/RaffleDisplay';
 import RaffleHistory from './components/RaffleHistory';
-
-
 import SettingsPanel from './components/SettingsPanel';
+import CountdownOverlay from './components/CountdownOverlay';
 
-const RaffleContent = () => {
+const RaffleContent = memo(() => {
   const {
     runTraditionalRaffle,
     runDigitRaffleStep,
@@ -21,86 +20,10 @@ const RaffleContent = () => {
 
   const isFinished = winner && revealedCount === digitCount;
 
+  // Trigger celebration effect when raffle finishes
   useEffect(() => {
     if (isFinished) {
-      const duration = 5 * 1000;
-      const animationEnd = Date.now() + duration;
-      const goldColors = ['#fbbf24', '#f59e0b', '#b45309', '#ffffff', '#eab308'];
-
-      const randomInRange = (min, max) => Math.random() * (max - min) + min;
-
-      const frame = () => {
-        const timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) return;
-
-        // 1. Powerful Side Cannons (continuous stream)
-        confetti({
-          particleCount: 4,
-          angle: 50,
-          spread: 80,
-          origin: { x: 0, y: 0.6 },
-          colors: goldColors,
-          scalar: 1.2,
-          drift: 1,
-        });
-        confetti({
-          particleCount: 4,
-          angle: 130,
-          spread: 80,
-          origin: { x: 1, y: 0.6 },
-          colors: goldColors,
-          scalar: 1.2,
-          drift: -1,
-        });
-
-        // 2. Rising Balloons (Gold & White) - Variable Size & Reduced Density
-        if (Math.random() < 0.2) {
-          confetti({
-            particleCount: 1,
-            origin: { x: Math.random(), y: 1.2 },
-            colors: goldColors,
-            shapes: ['circle'],
-            gravity: 0.25,
-            scalar: randomInRange(1.0, 3.5), // Variable size: 1.0 to 3.5
-            drift: (Math.random() - 0.5) * 0.5,
-            ticks: 800,
-            startVelocity: 80,
-            decay: 0.98,
-            angle: 90,
-            spread: 40
-          });
-        }
-
-        // 3. Random Firework Bursts (improved effect)
-        if (Math.random() < 0.05) { // Slightly less frequent for better performance
-          confetti({
-            particleCount: 80,
-            spread: 360, // Circular burst
-            origin: { x: randomInRange(0.1, 0.9), y: randomInRange(0.1, 0.5) },
-            colors: goldColors,
-            scalar: 0.7,
-            gravity: 0.5,
-            ticks: 60,
-            startVelocity: 30,
-            decay: 0.92,
-            shapes: ['circle'],
-          });
-        }
-
-        requestAnimationFrame(frame);
-      };
-
-      // Initial Massive Blast to kick it off
-      confetti({
-        particleCount: 250,
-        spread: 100,
-        origin: { y: 0.6 },
-        colors: goldColors,
-        scalar: 1.5,
-        zIndex: 100
-      });
-
-      frame();
+      runWinnerCelebration();
     }
   }, [isFinished]);
 
@@ -112,14 +35,15 @@ const RaffleContent = () => {
     }
   };
 
-  const getButtonText = () => {
+  // Memoize button text to avoid recalculating
+  const buttonText = useMemo(() => {
     if (isRaffling) return 'Rifando...';
     if (isFinished) return 'Rifar de Nuevo';
     if (isManualRevealEnabled) {
       return winner ? 'Revelar Siguiente' : 'Revelar Dígito';
     }
     return 'Iniciar Rifa';
-  };
+  }, [isRaffling, isFinished, isManualRevealEnabled, winner]);
 
   return (
     <div className="cards-stack">
@@ -132,9 +56,9 @@ const RaffleContent = () => {
               className="btn-primary"
               onClick={handleRaffleClick}
               disabled={isRaffling}
-              aria-label={getButtonText()}
+              aria-label={buttonText}
             >
-              {getButtonText()}
+              {buttonText}
             </button>
           </div>
         </div>
@@ -157,10 +81,15 @@ const RaffleContent = () => {
       </div>
     </div>
   );
-};
+});
+
+RaffleContent.displayName = 'RaffleContent';
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const handleOpenSettings = () => setIsSettingsOpen(true);
+  const handleCloseSettings = () => setIsSettingsOpen(false);
 
   return (
     <RaffleProvider>
@@ -177,7 +106,7 @@ function App() {
               </div>
 
               <button
-                onClick={() => setIsSettingsOpen(true)}
+                onClick={handleOpenSettings}
                 className="btn-settings"
                 aria-label="Abrir configuración"
               >
@@ -190,8 +119,9 @@ function App() {
         </div>
         <SettingsPanel
           isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
+          onClose={handleCloseSettings}
         />
+        <CountdownOverlay />
       </Layout>
     </RaffleProvider>
   );
