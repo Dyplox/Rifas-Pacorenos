@@ -6,6 +6,7 @@ import RaffleDisplay from './components/RaffleDisplay';
 import RaffleHistory from './components/RaffleHistory';
 import SettingsPanel from './components/SettingsPanel';
 import CountdownOverlay from './components/CountdownOverlay';
+import Footer from './components/Footer';
 import logoPacoreños from './assets/images/pacomede.jpg';
 
 const RaffleContent = memo(() => {
@@ -123,6 +124,7 @@ function App() {
           onClose={handleCloseSettings}
         />
         <CountdownOverlay />
+        <Footer />
       </Layout>
     </RaffleProvider>
   );

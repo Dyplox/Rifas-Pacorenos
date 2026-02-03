@@ -1,6 +1,7 @@
 import confetti from 'canvas-confetti';
 
-const GOLD_COLORS = ['#fbbf24', '#f59e0b', '#b45309', '#ffffff', '#eab308'];
+// Pacoreños Brand Colors: Green, Medellín Yellow, White
+const BRAND_COLORS = ['#58892B', '#F6BB31', '#ffffff', '#4a7524', '#ffcc00'];
 const CELEBRATION_DURATION = 5000;
 
 const randomInRange = (min, max) => Math.random() * (max - min) + min;
@@ -21,7 +22,7 @@ export const runWinnerCelebration = () => {
             angle: 50,
             spread: 80,
             origin: { x: 0, y: 0.6 },
-            colors: GOLD_COLORS,
+            colors: BRAND_COLORS,
             scalar: 1.2,
             drift: 1,
         });
@@ -30,7 +31,7 @@ export const runWinnerCelebration = () => {
             angle: 130,
             spread: 80,
             origin: { x: 1, y: 0.6 },
-            colors: GOLD_COLORS,
+            colors: BRAND_COLORS,
             scalar: 1.2,
             drift: -1,
         });
@@ -40,7 +41,7 @@ export const runWinnerCelebration = () => {
             confetti({
                 particleCount: 1,
                 origin: { x: Math.random(), y: 1.2 },
-                colors: GOLD_COLORS,
+                colors: BRAND_COLORS,
                 shapes: ['circle'],
                 gravity: 0.25,
                 scalar: randomInRange(1.0, 3.5),
@@ -59,7 +60,7 @@ export const runWinnerCelebration = () => {
                 particleCount: 80,
                 spread: 360,
                 origin: { x: randomInRange(0.1, 0.9), y: randomInRange(0.1, 0.5) },
-                colors: GOLD_COLORS,
+                colors: BRAND_COLORS,
                 scalar: 0.7,
                 gravity: 0.5,
                 ticks: 60,
@@ -77,7 +78,7 @@ export const runWinnerCelebration = () => {
         particleCount: 250,
         spread: 100,
         origin: { y: 0.6 },
-        colors: GOLD_COLORS,
+        colors: BRAND_COLORS,
         scalar: 1.5,
         zIndex: 100
     });

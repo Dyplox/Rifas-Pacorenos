@@ -684,17 +684,21 @@ input[type="checkbox"] {
   background: linear-gradient(180deg, #2a2a30 0%, #15151a 100%);
   border: 3px solid var(--primary-gold);
   border-radius: 16px;
-  width: 320px;
+  min-width: 320px;
+  width: auto;
+  padding: 0 2rem;
   height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18rem;
+  font-size: 16rem;
   font-weight: 800;
   color: var(--primary-gold);
   font-variant-numeric: tabular-nums;
   position: relative;
   overflow: visible;
+  text-align: center;
+  line-height: 1;
 
   /* Text glow with pulse animation */
   text-shadow: 0 0 15px rgba(251, 191, 36, 0.6),
@@ -754,4 +758,61 @@ input[type="checkbox"] {
   .countdown-ya {
     font-size: 7rem;
   }
+}
+
+.footer-container {
+  padding: 0.7rem 0;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.2));
+}
+
+.footer-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.footer-legal {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.footer-copyright {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.footer-brand {
+  color: var(--primary-gold);
+  font-weight: 600;
+}
+
+.footer-author {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.75rem;
+  margin-top: 0.4rem;
+  letter-spacing: 0.5px;
+}
+
+.author-name {
+  color: rgb(88, 137, 43);
+  font-weight: 700;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+
+.author-name:hover {
+  color: rgb(246, 187, 49);
+  text-shadow: 0 0 10px rgba(246, 187, 49, 0.3);
 }

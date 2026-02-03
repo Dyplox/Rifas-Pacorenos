@@ -38,7 +38,7 @@ const SettingsPanel = memo(({ isOpen, onClose }) => {
         setCountdownInputValue(value);
 
         const val = parseInt(value, 10);
-        if (value !== '' && !isNaN(val) && val >= 1 && val <= 10) {
+        if (value !== '' && !isNaN(val) && val >= 3 && val <= 10) {
             setCountdownDuration(val);
         }
     }, [setCountdownDuration]);
@@ -102,11 +102,14 @@ const SettingsPanel = memo(({ isOpen, onClose }) => {
                                     type="number"
                                     value={countdownInputValue}
                                     onChange={handleCountdownChange}
-                                    min="1"
+                                    min="3"
                                     max="10"
                                     disabled={isRaffling}
                                     style={{ width: '70px' }}
                                 />
+                                <span className="field-hint">
+                                    (Min 3, Max 10)
+                                </span>
                             </div>
                         )}
                     </div>
