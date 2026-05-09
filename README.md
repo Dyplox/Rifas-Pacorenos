@@ -1,59 +1,92 @@
-# 🏆 Gran Rifa App 🏆
+# Gran Rifa — Rifas Pacoreños
 
-Esta es una aplicación web moderna para realizar sorteos y rifas digitales de manera emocionante y visual. Construida con React y Vite, diseñada para eventos en vivo con animaciones de celebración de colores doradas para emocionar al ganador.
+Aplicación web para realizar rifas digitales en vivo, diseñada para la comunidad **Pacoreños en Medellín**. Incluye efectos visuales de celebración, historial de ganadores y múltiples modos de revelación.
 
-## Características
+## Demo
 
--   **Sorteo Dinámico**: Animación de "barajado" de números para generar tensión.
--   **Modos de Revelación**:
-    -   *Tradicional*: Revela el ganador completo automáticamente.
-    -   *Paso a Paso*: Revela dígito por dígito para mayor suspense (configurable).
--   **Celebración "Super"**:
-    -   Confeti dorado desde cañones laterales.
-    -   Globos flotantes con física realista.
-    -   Fuegos artificiales circulares.
--   **Historial**: Sidebar lateral con el registro de los últimos ganadores.
--   **Diseño Responsivo**: Adaptable a pantallas grandes (proyectores) y dispositivos móviles.
--   **Configurable**: Ajuste de cantidad de dígitos (1-5) y modalidad.
+Disponible en GitHub Pages: `https://abelgutierrezarias.github.io/Rifas-Pacorenos/`
 
 ## Tecnologías
 
--   **React 19**: Lógica de componentes y estado.
--   **Vite**: Entorno de desarrollo ultrarrápido.
--   **PNPM**: Gestión eficiente de dependencias.
--   **Canvas Confetti**: Efectos de partículas de alto rendimiento.
+| Categoría | Herramienta |
+|-----------|-------------|
+| Framework | React 19 |
+| Build tool | Vite 7 |
+| Estilos | CSS puro con variables |
+| Animaciones | canvas-confetti |
+| Gestor de paquetes | pnpm |
+| CI/CD | GitHub Actions → GitHub Pages |
 
-## Instalación y Uso
+## Características principales
 
-1.  **Clonar el repositorio**:
-    ```bash
-    git clone https://github.com/Dyplox/raflle-app.git
-    cd raffle-app
-    ```
+- **Modo tradicional** — todos los dígitos se revelan de golpe con animación de barajado
+- **Modo manual** — revelación dígito a dígito para mayor suspenso
+- **Cuenta regresiva** configurable (3-10 segundos) con overlay a pantalla completa
+- **Historial persistente** de ganadores con nombres editables y timestamps
+- **Celebración** con confetti, globos y fuegos artificiales al anunciar el ganador
+- **Configuración persistente** en `localStorage`
+- **Responsive** — funciona en escritorio, tableta, móvil y pantallas de proyector
 
-2.  **Instalar dependencias**:
-    Asegúrate de tener `pnpm` instalado.
-    ```bash
-    pnpm install
-    ```
+## Inicio rápido
 
-3.  **Correr en desarrollo**:
-    ```bash
-    pnpm dev
-    ```
+```bash
+# Instalar dependencias
+pnpm install
 
-4.  **Construir para producción**:
-    ```bash
-    pnpm build
-    ```
+# Servidor de desarrollo
+pnpm dev
 
-## Estructura del Proyecto
+# Build de producción
+pnpm build
 
--   `src/components`: Componentes UI (RaffleDisplay, RaffleHistory, Layout).
--   `src/context`: Lógica de estado global (RaffleContext).
--   `src/App.jsx`: Componente principal y lógica de celebración.
--   `src/index.css`: Estilos globales y variables de diseño.
+# Vista previa del build
+pnpm preview
+
+# Linting
+pnpm lint
+```
+
+## Estructura del proyecto
+
+```
+src/
+├── main.jsx                    # Punto de entrada React
+├── App.jsx                     # Componente raíz
+├── index.css                   # Estilos globales y animaciones
+├── assets/images/
+│   └── pacomede.jpg            # Logo del header
+├── components/
+│   ├── RaffleDisplay.jsx       # Cajas de dígitos con animación de barajado
+│   ├── RaffleHistory.jsx       # Panel lateral de ganadores
+│   ├── SettingsPanel.jsx       # Modal de configuración
+│   ├── CountdownOverlay.jsx    # Overlay de cuenta regresiva
+│   ├── Layout.jsx              # Contenedor principal
+│   └── Footer.jsx              # Pie de página con marca
+├── context/
+│   └── RaffleContext.jsx       # Estado global con Context API
+├── hooks/
+│   └── useLocalStorage.js      # Hook de persistencia en localStorage
+└── utils/
+    └── confettiEffects.js      # Efectos de celebración (confetti + fuegos)
+```
+
+## Documentación adicional
+
+- [Arquitectura](docs/ARCHITECTURE.md)
+- [Componentes](docs/COMPONENTS.md)
+- [Guía de desarrollo](docs/DEVELOPMENT.md)
+- [Despliegue](docs/DEPLOYMENT.md)
+
+## Colores de marca
+
+| Color | Valor | Uso |
+|-------|-------|-----|
+| Dorado principal | `#fbbf24` | Acento principal, botones, texto destacado |
+| Dorado oscuro | `#b45309` | Gradientes y sombras |
+| Verde Pacoreños | `#58892B` | Ganador destacado y "¡MATRACA!" |
+| Amarillo Medellín | `#F6BB31` | Confetti de celebración |
+| Fondo oscuro | `#0f0f13` | Fondo general de la app |
 
 ## Licencia
 
-MIT
+Uso privado — Pacoreños en Medellín © 2025
