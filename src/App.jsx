@@ -99,7 +99,7 @@ function App() {
         <div className="main-content-container">
           <RaffleHistory />
           <div className="cards-wrapper">
-            <header className="header-container" style={{ width: '100%', maxWidth: '1200px' }}>
+            <header className="header-container">
               <div className="logo-container">
                 <img src={logoPacoreños} alt="Logo Pacoreños" className="logo-image" />
                 <h1 className="logo-text">
