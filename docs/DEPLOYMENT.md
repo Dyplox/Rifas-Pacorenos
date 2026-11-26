@@ -10,6 +10,15 @@ El despliegue está automatizado con GitHub Actions usando el despliegue nativo 
 https://dyplox.github.io/Rifas-Pacorenos/
 ```
 
+### Configuración de Pages en GitHub (importante)
+
+En **Settings → Pages**, el origen (*Build and deployment → Source*) debe ser **GitHub Actions**. El workflow publica con `actions/deploy-pages`; no se usa ninguna rama de publicación (`gh-pages` ni carpeta `docs/`).
+
+- Si el origen apunta a una rama y esa rama se borra, GitHub **despublica el sitio** y el deploy falla en *Setup Pages* con `Get Pages site failed … Not Found`. Pasó el 2026-11-26 al borrar `feature/ux-pacorenos-medellin`.
+- Para reactivarlo: elegir **GitHub Actions** en Settings → Pages (o `gh api -X POST repos/Dyplox/Rifas-Pacorenos/pages -f build_type=workflow`) y volver a ejecutar el workflow de deploy.
+- Comprobar la configuración actual: `gh api repos/Dyplox/Rifas-Pacorenos/pages -q .build_type` debe devolver `workflow`.
+- El entorno `github-pages` (Settings → Environments) solo permite desplegar desde `main`.
+
 ### CI (`.github/workflows/ci.yml`)
 
 Se ejecuta en cada pull request (y manualmente), con dos jobs en paralelo. No despliega nada.
