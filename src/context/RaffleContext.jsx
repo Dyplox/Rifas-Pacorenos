@@ -14,6 +14,9 @@ export const TRADITIONAL_SHUFFLE_MS = 800;
 export const DIGIT_STEP_MS = 500;
 export const GO_MESSAGE_MS = 800;
 export const GO_MESSAGE = '¡MATRACA!';
+// Dramatic pause between the last number and GO_MESSAGE (screen goes dark, a light "charges up")
+export const SUSPENSE_MS = 1200;
+export const SUSPENSE = 'suspense';
 
 const isIntegerInRange = (min, max) => (value) =>
   Number.isInteger(value) && value >= min && value <= max;
@@ -149,11 +152,14 @@ export const RaffleProvider = ({ children }) => {
         } else {
           clearInterval(countdownIntervalRef.current);
           countdownIntervalRef.current = null;
-          setCurrentCount(GO_MESSAGE);
+          setCurrentCount(SUSPENSE);
           schedule(() => {
-            setCurrentCount(null);
-            callback();
-          }, GO_MESSAGE_MS);
+            setCurrentCount(GO_MESSAGE);
+            schedule(() => {
+              setCurrentCount(null);
+              callback();
+            }, GO_MESSAGE_MS);
+          }, SUSPENSE_MS);
         }
       }, 1000);
     } else {

@@ -12,13 +12,22 @@ const history = JSON.stringify(Array.from({ length: 6 }, (_, i) => ({
 test('capture key screens', async ({ page }, testInfo) => {
     test.setTimeout(90_000);
     const dir = `e2e-screens/${testInfo.project.name}`;
-    await seedSettings(page, { raffle_history: history, raffle_isCountdownEnabled: 'true', raffle_countdownDuration: '3' });
+    await seedSettings(page, { raffle_history: history, raffle_isCountdownEnabled: 'true', raffle_countdownDuration: '5' });
     await page.goto('./');
     await page.screenshot({ path: `${dir}/1-idle.png`, fullPage: true });
 
     await raffleButton(page).click();
-    await page.locator('.countdown-popup', { hasText: '2' }).waitFor();
-    await page.screenshot({ path: `${dir}/2-countdown.png` });
+    // Best effort: slow mobile screenshots can miss a 1s phase (layout/raffle specs assert them)
+    const capture = async (locator, name, delay) => {
+        if (await locator.waitFor({ timeout: 4000 }).then(() => true, () => false)) {
+            await page.waitForTimeout(delay);
+            await page.screenshot({ path: `${dir}/${name}.png` });
+        }
+    };
+    for (const n of ['5', '3', '1']) {
+        await capture(page.locator('.countdown-popup', { hasText: new RegExp(`^${n}$`) }), `2-countdown-${n}`, 400);
+    }
+    await capture(page.locator('.countdown-charge'), '2-countdown-pause', 350);
     // "¡MATRACA!" lasts 800ms; a slow mobile screenshot above can miss it (layout.spec checks it fits)
     const matraca = page.locator('.countdown-popup', { hasText: '¡MATRACA!' });
     if (await matraca.waitFor({ timeout: 4000 }).then(() => true, () => false)) {

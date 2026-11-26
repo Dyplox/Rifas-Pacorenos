@@ -164,9 +164,12 @@ Overlay a pantalla completa que muestra la cuenta regresiva.
 
 - Se renderiza solo cuando `currentCount !== null`
 - Muestra `currentCount` con animación `countdown-pop` (se re-monta en cada número vía `key`)
-- Al terminar la cuenta, `currentCount` vale `'¡MATRACA!'` durante 800 ms y se aplica la clase `countdown-ya` (verde, animación `countdown-ya-burst`)
-- El fondo se intensifica progresivamente (`viewport-progressive-intensity`) durante `countdownDuration + 0.5` s
-- Si el sonido está activo, suena `playTick()` en cada número y `playGo()` en `'¡MATRACA!'`
+- **Suspenso creciente:** `countdownTension()` (`src/utils/countdown.js`) va de 0 en el primer número a 1 en el último y se pasa como `--tension`. Con ella el número crece (`scale`), pasa de dorado a rojo (`color-mix`) y el pulso se acelera (de 1 s a 0,45 s)
+- Últimos 3 números (`.is-final`): un anillo de latido se expande en cada pulso. Último número (`.is-last`): la escena tiembla
+- **Pausa dramática** (`currentCount === 'suspense'`, 1,2 s): la pantalla queda casi a oscuras y una luz se "carga" (`.countdown-charge`); los lectores de pantalla oyen "Atentos…"
+- Luego `currentCount` vale `'¡MATRACA!'` durante 800 ms con la clase `countdown-ya` (verde, animación `countdown-ya-burst`)
+- El fondo se intensifica progresivamente (`viewport-progressive-intensity`) durante toda la secuencia
+- Si el sonido está activo: `playHeartbeat(tension)` en cada número (latido más agudo y fuerte al final), `playRiser()` en la pausa y `playGo()` en `'¡MATRACA!'`
 
 ---
 

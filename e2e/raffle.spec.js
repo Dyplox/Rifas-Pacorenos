@@ -70,3 +70,37 @@ test('manual mode reveals one digit per key press', async ({ page }) => {
     await expect(raffleButton(page)).toHaveText('Rifar de Nuevo');
     await expect(page.locator('.history-item')).toHaveCount(1);
 });
+
+test('countdown builds suspense: grows, turns red, trembles, pauses, then "¡MATRACA!"', async ({ page }) => {
+    await seedSettings(page, { raffle_isCountdownEnabled: 'true', raffle_countdownDuration: '5' });
+    await page.goto('./');
+    await raffleButton(page).click();
+
+    const popup = page.locator('.countdown-popup');
+    const stage = page.locator('.countdown-stage');
+    const looks = () => popup.evaluate(el => {
+        const style = getComputedStyle(el);
+        return { color: style.color, scale: parseFloat(style.scale) || 1 };
+    });
+
+    await expect(popup).toHaveText('5');
+    await expect(stage).not.toHaveClass(/is-final/);
+    const first = await looks();
+
+    await expect(popup).toHaveText('3');
+    await expect(stage).toHaveClass(/is-final/);
+    await expect(stage).not.toHaveClass(/is-last/);
+
+    await expect(popup).toHaveText('1');
+    await expect(stage).toHaveClass(/is-last/);
+    const last = await looks();
+    expect(last.scale).toBeGreaterThan(first.scale);
+    expect(last.color, 'color shifts from gold towards red').not.toBe(first.color);
+
+    // Dramatic pause: no number, a light charging up
+    await expect(page.locator('.countdown-charge')).toBeVisible();
+    await expect(popup).toHaveCount(0);
+
+    await expect(popup).toHaveText('¡MATRACA!', { timeout: 3000 });
+    await expect(page.getByRole('heading', { name: '¡Tenemos un Ganador!' })).toBeVisible({ timeout: 3000 });
+});

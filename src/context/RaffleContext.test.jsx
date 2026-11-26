@@ -7,6 +7,8 @@ import {
     DIGIT_STEP_MS,
     GO_MESSAGE,
     GO_MESSAGE_MS,
+    SUSPENSE,
+    SUSPENSE_MS,
 } from './RaffleContext';
 
 const setup = (settings = {}) => {
@@ -51,6 +53,10 @@ describe('traditional raffle', () => {
         advance(1000);
         expect(raffle.current.currentCount).toBe(2);
         advance(2000);
+        // Dramatic pause after the last number, then the GO message
+        expect(raffle.current.currentCount).toBe(SUSPENSE);
+        expect(raffle.current.isRaffling).toBe(false);
+        advance(SUSPENSE_MS);
         expect(raffle.current.currentCount).toBe(GO_MESSAGE);
         advance(GO_MESSAGE_MS);
         expect(raffle.current.currentCount).toBeNull();
@@ -93,10 +99,21 @@ describe('reset', () => {
         expect(raffle.current.history).toHaveLength(0);
     });
 
-    it('cancels a countdown, including the final message', () => {
+    it('cancels a countdown during the dramatic pause', () => {
         const raffle = setup({ raffle_isCountdownEnabled: 'true', raffle_countdownDuration: '3' });
         act(() => raffle.current.runTraditionalRaffle());
         advance(3000);
+        expect(raffle.current.currentCount).toBe(SUSPENSE);
+        act(() => raffle.current.resetRaffle());
+        advance(5000);
+        expect(raffle.current.currentCount).toBeNull();
+        expect(raffle.current.history).toHaveLength(0);
+    });
+
+    it('cancels a countdown, including the final message', () => {
+        const raffle = setup({ raffle_isCountdownEnabled: 'true', raffle_countdownDuration: '3' });
+        act(() => raffle.current.runTraditionalRaffle());
+        advance(3000 + SUSPENSE_MS);
         expect(raffle.current.currentCount).toBe(GO_MESSAGE);
         act(() => raffle.current.resetRaffle());
         advance(5000);
