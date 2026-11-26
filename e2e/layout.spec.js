@@ -27,28 +27,69 @@ test.describe('responsive layout', () => {
             const boxes = page.locator('.digit-box');
             await expect(boxes).toHaveCount(digits);
 
-            // Digits either fill the card width or reach the height cap
-            const sizes = await page.evaluate(() => {
-                const card = document.querySelector('.card-raffle');
-                const style = getComputedStyle(card);
-                const inner = card.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-                const row = document.querySelector('.digit-container').getBoundingClientRect();
-                const first = document.querySelector('.digit-box').getBoundingClientRect();
-                const children = [...document.querySelectorAll('.digit-box')].map(b => b.getBoundingClientRect());
-                const rowWidth = children.at(-1).right - children[0].left;
-                return { inner, rowWidth, boxHeight: first.height, vh: window.innerHeight, rowLeft: row.left };
+            // Digits fill the space they get in at least one dimension:
+            // wide screens -> the .digit-container box (width or height);
+            // narrow screens -> the width, or the 24dvh height cap (38dvh on short landscape)
+            const m = await page.evaluate(() => {
+                const container = document.querySelector('.digit-container').getBoundingClientRect();
+                const boxes = [...document.querySelectorAll('.digit-box')].map(b => b.getBoundingClientRect());
+                return {
+                    wide: matchMedia('(min-width: 1025px)').matches,
+                    shortLandscape: matchMedia('(max-height: 500px) and (orientation: landscape)').matches,
+                    containerWidth: container.width,
+                    containerHeight: container.height,
+                    rowWidth: boxes.at(-1).right - boxes[0].left,
+                    boxHeight: boxes[0].height,
+                    vh: window.innerHeight,
+                };
             });
-            // Same height cap as .digit-box in index.css (keeps the winner message on screen)
-            const vh = sizes.vh;
-            const heightCap = Math.min(0.30 * vh, Math.max(0.16 * vh, (vh - (150 + 0.5 * vh)) / 1.35)) * 1.35;
-            const fillsWidth = sizes.rowWidth >= sizes.inner * 0.95;
-            const fillsHeight = sizes.boxHeight >= heightCap * 0.95;
-            expect(fillsWidth || fillsHeight, JSON.stringify(sizes)).toBe(true);
+            const fillsWidth = m.rowWidth >= m.containerWidth * 0.95;
+            const heightCap = m.wide
+                ? m.containerHeight
+                : (m.shortLandscape ? 0.38 : 0.24) * m.vh * 1.35;
+            const fillsHeight = m.boxHeight >= heightCap * 0.95;
+            expect(fillsWidth || fillsHeight, JSON.stringify(m)).toBe(true);
 
             for (let i = 0; i < digits; i++) await expectInsideViewport(page, boxes.nth(i));
             await expectInsideViewport(page, raffleButton(page));
         });
     }
+
+    test('the whole app fits in one screen: footer visible, no page scroll, history scrolls inside', async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name === 'phone-landscape', 'a 360px-tall screen cannot fit everything; it scrolls');
+        const history = Array.from({ length: 25 }, (_, i) => ({
+            id: `h${i}`, number: String(100 + i).padStart(3, '0'), winnerName: i % 2 ? '' : `Ganador ${i}`,
+            timestamp: '10:00:00', createdAt: '2026-11-26T15:00:00Z',
+        }));
+        await seedSettings(page, { raffle_history: JSON.stringify(history) });
+        await page.goto('./');
+
+        const checkOneScreen = async (label) => {
+            const pageOverflow = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+            expect(pageOverflow, `${label}: page should not scroll`).toBeLessThanOrEqual(1);
+            await expectInsideViewport(page, page.locator('.footer-container'));
+            await expectInsideViewport(page, raffleButton(page));
+            await expectInsideViewport(page, page.locator('.winner-result-box'));
+            // At least the latest history entry is visible
+            await expect(page.locator('.history-item').first()).toBeInViewport();
+            // On narrow screens the history sits below the stage, not above it
+            const narrow = await page.evaluate(() => !matchMedia('(min-width: 1025px)').matches);
+            if (narrow) {
+                const stageBottom = (await page.locator('.card-result').boundingBox());
+                const historyTop = (await page.locator('.history-sidebar').boundingBox());
+                expect(historyTop.y, 'history below the winner card').toBeGreaterThanOrEqual(stageBottom.y + stageBottom.height - 1);
+            }
+        };
+
+        await checkOneScreen('idle');
+        const listScrolls = await page.locator('.history-list').evaluate(el => el.scrollHeight > el.clientHeight);
+        expect(listScrolls, 'history list scrolls inside its panel').toBe(true);
+
+        await raffleButton(page).click();
+        await expect(page.getByRole('heading', { name: '¡Tenemos un Ganador!' })).toBeVisible();
+        await waitForAnimations(page);
+        await checkOneScreen('after draw');
+    });
 
     test('after a draw, digits and the winner message are visible without scrolling', async ({ page }, testInfo) => {
         test.skip(testInfo.project.name === 'phone-landscape', 'a 360px-tall screen cannot show both; it scrolls');

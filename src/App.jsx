@@ -123,12 +123,19 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
           {isFinished ? '¡Tenemos un Ganador!' : 'Próximo Ganador'}
         </h2>
 
-        {isFinished && (
+        {isFinished ? (
           <div className="winner-announcement">
             <div className="winner-result-box">
               <span className="winner-emoji" aria-hidden="true">🎉</span>
               <span className="winner-text">¡Felicidades al número {winner}!</span>
               <span className="winner-emoji" aria-hidden="true">🎉</span>
+            </div>
+          </div>
+        ) : (
+          // Same size as the real announcement, so the layout doesn't jump when it appears
+          <div className="winner-announcement is-placeholder" aria-hidden="true">
+            <div className="winner-result-box">
+              <span className="winner-text">Aquí aparecerá el ganador</span>
             </div>
           </div>
         )}
