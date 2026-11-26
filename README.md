@@ -24,7 +24,7 @@ Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 
 - **Modo tradicional** — todos los dígitos se revelan de golpe con animación de barajado
 - **Modo manual** — revelación dígito a dígito para mayor suspenso
-- **Cuenta regresiva** configurable (3-10 segundos, activada por defecto) con overlay a pantalla completa
+- **Cuenta regresiva con suspenso** configurable (3-10 segundos, activada por defecto): el número crece, pasa de dorado a rojo y late cada vez más rápido; el último tiembla y una pausa a oscuras precede a "¡MATRACA!"
 - **Sin números repetidos** (opcional, activado por defecto): los números ya sorteados se excluyen y se muestra cuántos quedan
 - **Sorteo con `crypto.getRandomValues()`**, uniforme y sin sesgo
 - **Historial persistente** de ganadores con nombres editables, fecha y hora, borrado individual y exportación a CSV

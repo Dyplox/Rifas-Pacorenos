@@ -77,8 +77,9 @@ runWithCountdown(callback)
   ├─ Si countdown desactivado → callback()
   └─ Si activo → currentCount = countdownDuration
        └─ setInterval(1s): currentCount--
-            └─ al llegar a 0 → currentCount = '¡MATRACA!'
-                 └─ setTimeout(800ms) → currentCount = null, callback()
+            └─ al llegar a 0 → currentCount = 'suspense'   (pausa dramática, SUSPENSE_MS = 1200)
+                 └─ setTimeout(1200ms) → currentCount = '¡MATRACA!'
+                      └─ setTimeout(800ms) → currentCount = null, callback()
 ```
 
 ### Rifa tradicional

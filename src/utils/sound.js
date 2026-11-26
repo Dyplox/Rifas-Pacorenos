@@ -28,18 +28,43 @@ const playTone = (ctx, { frequency, start = 0, duration = 0.15, type = 'sine', v
     oscillator.stop(time + duration + 0.05);
 };
 
-const withContext = (play) => () => {
+const withContext = (play) => (...args) => {
     try {
         const ctx = getContext();
-        if (ctx) play(ctx);
+        if (ctx) play(ctx, ...args);
     } catch (error) {
         console.warn('Error playing sound:', error);
     }
 };
 
-/** Short tick for each countdown number */
-export const playTick = withContext((ctx) => {
-    playTone(ctx, { frequency: 660, duration: 0.12, type: 'square', volume: 0.12 });
+/**
+ * Heartbeat ("lub-dub") for each countdown number.
+ * `tension` goes from 0 (first number) to 1 (last): higher pitch, louder, closer beats.
+ */
+export const playHeartbeat = withContext((ctx, tension = 0) => {
+    const base = 95 + tension * 70;
+    const volume = 0.3 + tension * 0.25;
+    const gap = 0.22 - tension * 0.08;
+    playTone(ctx, { frequency: base, duration: 0.16, type: 'sine', volume });
+    playTone(ctx, { frequency: base * 4, duration: 0.04, type: 'triangle', volume: volume * 0.3 });
+    playTone(ctx, { frequency: base * 0.85, start: gap, duration: 0.2, type: 'sine', volume: volume * 0.8 });
+});
+
+/** Rising sound for the dramatic pause before "¡MATRACA!" */
+export const playRiser = withContext((ctx, durationMs = 1200) => {
+    const duration = durationMs / 1000;
+    const time = ctx.currentTime;
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(140, time);
+    oscillator.frequency.exponentialRampToValueAtTime(1100, time + duration);
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(0.12, time + duration * 0.9);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+    oscillator.connect(gain).connect(ctx.destination);
+    oscillator.start(time);
+    oscillator.stop(time + duration + 0.05);
 });
 
 /** "¡MATRACA!" moment */

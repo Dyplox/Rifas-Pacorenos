@@ -1227,9 +1227,18 @@ input[type="checkbox"] {
 }
 
 .countdown-overlay {
+  /* Scales with the smaller side of the screen: huge on projectors, still fits on phones */
+  --cd: min(46vmin, 32rem);
+  /* 0 on the first number → 1 on the last; set inline by CountdownOverlay */
+  --tension: 0;
+  /* Gold → red as the end approaches */
+  --cd-color: color-mix(in oklab, var(--primary-gold), #ff4d2e calc(var(--tension) * 100%));
+  /* Heartbeat gets faster: 1s on the first number, 0.45s on the last */
+  --cd-beat: calc(1s - var(--tension) * 0.55s);
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.9);
+  transition: background-color 0.3s ease;
   backdrop-filter: blur(15px);
   display: flex;
   align-items: center;
@@ -1246,11 +1255,18 @@ input[type="checkbox"] {
     inset 0 0 60px rgba(251, 191, 36, 0.05);
 }
 
+.countdown-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .countdown-popup {
-  /* Scales with the smaller side of the screen: huge on projectors, still fits on phones */
-  --cd: min(46vmin, 32rem);
   background: linear-gradient(180deg, #2a2a30 0%, #15151a 100%);
-  border: max(3px, calc(var(--cd) * 0.012)) solid var(--primary-gold);
+  border: max(3px, calc(var(--cd) * 0.012)) solid var(--cd-color);
+  /* Grows as tension builds (independent of the transform animations) */
+  scale: calc(0.88 + var(--tension) * 0.3);
   border-radius: calc(var(--cd) * 0.08);
   min-width: calc(var(--cd) * 0.9);
   height: calc(var(--cd) * 1.3);
@@ -1260,7 +1276,7 @@ input[type="checkbox"] {
   justify-content: center;
   font-size: var(--cd);
   font-weight: 800;
-  color: var(--primary-gold);
+  color: var(--cd-color);
   font-variant-numeric: tabular-nums;
   position: relative;
   text-align: center;
@@ -1274,15 +1290,90 @@ input[type="checkbox"] {
     0 0 40px rgba(251, 191, 36, 0.3),
     0 0 80px rgba(251, 191, 36, 0.15);
 
-  /* Pop entrance + pulse + text glow + float */
+  /* Pop entrance + pulse (speeds up with tension) + text glow + float */
   animation: countdown-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-    countdown-pulse 1s ease-in-out infinite,
+    countdown-pulse var(--cd-beat) ease-in-out infinite,
     text-glow-pulse 1.2s ease-in-out infinite,
     float 3s ease-in-out infinite;
 }
 
+/* Last three numbers: a heartbeat ring expands from the number on every beat */
+.countdown-stage.is-final::before {
+  content: '';
+  position: absolute;
+  width: calc(var(--cd) * 1.5);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: max(3px, calc(var(--cd) * 0.015)) solid var(--cd-color);
+  animation: countdown-ring var(--cd-beat) ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes countdown-ring {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Last number: the whole stage trembles */
+.countdown-stage.is-last {
+  animation: countdown-shake 0.11s linear infinite;
+}
+
+@keyframes countdown-shake {
+  0% { translate: 0 0; rotate: 0deg; }
+  25% { translate: -5px 3px; rotate: -0.6deg; }
+  50% { translate: 4px -3px; rotate: 0.5deg; }
+  75% { translate: -3px -4px; rotate: -0.4deg; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+
+/* Dramatic pause before "¡MATRACA!": near darkness while a light charges up */
+.countdown-overlay.is-suspense {
+  background-color: rgba(0, 0, 0, 0.97);
+}
+
+.countdown-charge {
+  width: calc(var(--cd) * 0.6);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #ffe9a8 18%, var(--primary-gold) 38%, rgba(251, 191, 36, 0) 70%);
+  /* 1.2s = SUSPENSE_MS in RaffleContext.jsx */
+  animation: countdown-charge 1.2s cubic-bezier(0.5, 0, 0.9, 0.4) forwards,
+    countdown-flicker 0.09s steps(2) infinite;
+}
+
+@keyframes countdown-charge {
+  0% {
+    transform: scale(0.05);
+    opacity: 0.2;
+  }
+
+  70% {
+    transform: scale(0.7);
+    opacity: 0.85;
+  }
+
+  100% {
+    transform: scale(2.2);
+    opacity: 1;
+  }
+}
+
+@keyframes countdown-flicker {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.35); }
+}
+
 .countdown-ya {
   /* "¡MATRACA!" is ~6em wide: limit by width so it never overflows */
+  scale: 1;
   font-size: min(13vw, 24vh);
   height: auto;
   min-width: 0;
