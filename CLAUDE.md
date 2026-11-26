@@ -54,7 +54,7 @@ CI: `.github/workflows/ci.yml` runs `verify` (lint + test + build) and `e2e` (Pl
 
 ## Deployment
 
-GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages on push to `main` only (or manual dispatch). `vite.config.js` sets `base: '/Rifas-Pacorenos/'` — it must match the repo name or assets will 404 on Pages.
+GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages on push to `main` only (or manual dispatch). `vite.config.js` sets `base: '/Rifas-Pacorenos/'` — it must match the repo name or assets will 404 on Pages. The Pages source must be **GitHub Actions** (`gh api repos/Dyplox/Rifas-Pacorenos/pages -q .build_type` → `workflow`); if it points to a branch and that branch is deleted, GitHub unpublishes the site and the deploy fails at *Setup Pages* with 404. Check this before deleting branches.
 
 ## Docs
 
