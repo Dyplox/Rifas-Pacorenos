@@ -1018,6 +1018,11 @@ input[type="checkbox"] {
     gap: 0.5rem;
   }
 
+  /* Leave slack for wider fonts (e.g. Linux/Android) so the page still fits one screen */
+  .history-sidebar {
+    min-height: 8rem;
+  }
+
   .winner-emoji {
     display: none;
   }
