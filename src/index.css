@@ -274,6 +274,24 @@ body {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.raffle-hint {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  margin: 1rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
 .main-content-container {
   display: flex;
   flex-direction: row;
@@ -321,10 +339,40 @@ body {
   text-align: left;
 }
 
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-export {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.history-export:not(:disabled):hover {
+  color: var(--primary-gold);
+  border-color: var(--primary-gold);
+}
+
+.history-export:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .history-title {
   color: var(--primary-gold);
   font-size: 1.1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   margin-top: 0;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -354,6 +402,7 @@ body {
 }
 
 .history-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -362,6 +411,38 @@ body {
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
+}
+
+.history-delete {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.45rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0.25rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.history-item:hover .history-delete,
+.history-delete:focus-visible {
+  opacity: 0.7;
+}
+
+.history-delete:hover {
+  color: #f87171;
+  opacity: 1;
+}
+
+/* Touch screens have no hover: keep the delete button visible */
+@media (hover: none) {
+  .history-delete {
+    opacity: 0.5;
+  }
 }
 
 .history-item.latest {
@@ -575,6 +656,11 @@ input[type="checkbox"] {
   .btn-settings {
     padding: 0.5rem 0.8rem;
     font-size: 0.85rem;
+  }
+
+  .btn-settings .btn-label,
+  .shortcut-hint {
+    display: none;
   }
 
   .winner-result-box {
@@ -853,4 +939,16 @@ input[type="checkbox"] {
 .author-name:hover {
   color: rgb(246, 187, 49);
   text-shadow: 0 0 10px rgba(246, 187, 49, 0.3);
+}
+
+/* Respect users who ask the OS for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

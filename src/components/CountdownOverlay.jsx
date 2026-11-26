@@ -1,15 +1,22 @@
-import { memo } from 'react';
-import { useRaffle } from '../context/RaffleContext';
+import { memo, useEffect } from 'react';
+import { useRaffle, GO_MESSAGE } from '../context/RaffleContext';
+import { playGo, playTick } from '../utils/sound';
 
 const CountdownOverlay = memo(() => {
-    const { currentCount, countdownDuration } = useRaffle();
+    const { currentCount, countdownDuration, isSoundEnabled } = useRaffle();
+
+    const isGo = currentCount === GO_MESSAGE;
+
+    useEffect(() => {
+        if (!isSoundEnabled || currentCount === null) return;
+        if (currentCount === GO_MESSAGE) playGo();
+        else playTick();
+    }, [currentCount, isSoundEnabled]);
 
     if (currentCount === null) return null;
 
-    const isYa = currentCount === '¡MATRACA!';
-
-    // Calculate total animation time (countdown numbers + "¡YA!" moment)
-    const totalAnimationTime = countdownDuration + 0.5; // +1 for the "¡YA!" second
+    // Total animation time (countdown numbers + the GO_MESSAGE moment)
+    const totalAnimationTime = countdownDuration + 0.5;
 
     return (
         <div
@@ -20,7 +27,7 @@ const CountdownOverlay = memo(() => {
         >
             <div
                 key={currentCount}
-                className={`countdown-popup ${isYa ? 'countdown-ya' : ''}`}
+                className={`countdown-popup ${isGo ? 'countdown-ya' : ''}`}
             >
                 {currentCount}
             </div>
