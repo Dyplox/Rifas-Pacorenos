@@ -1,33 +1,51 @@
 import { useState, useEffect } from 'react';
 
+const parseStored = (saved, defaultValue) => {
+    if (typeof defaultValue === 'boolean') {
+        if (saved === 'true') return true;
+        if (saved === 'false') return false;
+        throw new Error(`invalid boolean "${saved}"`);
+    }
+    if (typeof defaultValue === 'number') {
+        const number = Number(saved);
+        if (saved.trim() === '' || !Number.isFinite(number)) {
+            throw new Error(`invalid number "${saved}"`);
+        }
+        return number;
+    }
+    if (typeof defaultValue === 'object' && defaultValue !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(defaultValue) !== Array.isArray(parsed) || typeof parsed !== 'object' || parsed === null) {
+            throw new Error('stored value has the wrong shape');
+        }
+        return parsed;
+    }
+    return saved;
+};
+
 /**
- * Custom hook for persisting state in localStorage
+ * Custom hook for persisting state in localStorage.
+ * The stored value is deserialized according to the type of `defaultValue`.
+ * Invalid or corrupted values fall back to `defaultValue`.
+ *
  * @param {string} key - The localStorage key
- * @param {any} defaultValue - Default value if nothing is stored
- * @param {function} [parser] - Optional parser for the stored value (default: JSON.parse for objects, direct for primitives)
+ * @param {any} defaultValue - Default value if nothing (valid) is stored
+ * @param {object} [options]
+ * @param {(value: any) => boolean} [options.validate] - Extra check; returning false falls back to the default
  */
-export const useLocalStorage = (key, defaultValue, parser = null) => {
+export const useLocalStorage = (key, defaultValue, { validate } = {}) => {
     const [value, setValue] = useState(() => {
         try {
             const saved = localStorage.getItem(key);
             if (saved === null) return defaultValue;
 
-            // Use custom parser if provided
-            if (parser) return parser(saved);
-
-            // Auto-detect type based on defaultValue
-            if (typeof defaultValue === 'boolean') {
-                return saved === 'true';
+            const parsed = parseStored(saved, defaultValue);
+            if (validate && !validate(parsed)) {
+                throw new Error(`value ${saved} failed validation`);
             }
-            if (typeof defaultValue === 'number') {
-                return parseInt(saved, 10);
-            }
-            if (typeof defaultValue === 'object') {
-                return JSON.parse(saved);
-            }
-            return saved;
+            return parsed;
         } catch (error) {
-            console.warn(`Error reading localStorage key "${key}":`, error);
+            console.warn(`Error reading localStorage key "${key}", using default:`, error);
             return defaultValue;
         }
     });
