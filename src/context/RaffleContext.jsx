@@ -1,7 +1,25 @@
-import { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { pickWinner, generateId } from '../utils/random';
 
 const RaffleContext = createContext();
+
+export const MIN_DIGITS = 1;
+export const MAX_DIGITS = 5;
+export const MIN_COUNTDOWN = 3;
+export const MAX_COUNTDOWN = 10;
+
+// Animation timings (ms)
+export const TRADITIONAL_SHUFFLE_MS = 800;
+export const DIGIT_STEP_MS = 500;
+export const GO_MESSAGE_MS = 800;
+export const GO_MESSAGE = '¡MATRACA!';
+
+const isIntegerInRange = (min, max) => (value) =>
+  Number.isInteger(value) && value >= min && value <= max;
+
+const isValidHistory = (value) =>
+  Array.isArray(value) && value.every(entry => entry && typeof entry.number === 'string');
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useRaffle = () => {
@@ -13,25 +31,35 @@ export const useRaffle = () => {
 };
 
 // Helper to create a history entry
-const createHistoryEntry = (number) => ({
-  id: Date.now(),
-  number,
-  winnerName: '', // Optional: name of the winner
-  timestamp: new Date().toLocaleTimeString('es-CL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  })
-});
+const createHistoryEntry = (number) => {
+  const now = new Date();
+  return {
+    id: generateId(),
+    number,
+    winnerName: '', // Optional: name of the winner
+    createdAt: now.toISOString(),
+    timestamp: now.toLocaleTimeString('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
+  };
+};
 
 export const RaffleProvider = ({ children }) => {
   // Persisted state via custom hook
-  const [digitCount, setDigitCount] = useLocalStorage('raffle_digitCount', 3);
+  const [digitCount, setDigitCount] = useLocalStorage('raffle_digitCount', 3, {
+    validate: isIntegerInRange(MIN_DIGITS, MAX_DIGITS)
+  });
   const [isManualRevealEnabled, setIsManualRevealEnabled] = useLocalStorage('raffle_isManualRevealEnabled', false);
   const [isCountdownEnabled, setIsCountdownEnabled] = useLocalStorage('raffle_isCountdownEnabled', true);
-  const [countdownDuration, setCountdownDuration] = useLocalStorage('raffle_countdownDuration', 3);
-  const [history, setHistory] = useLocalStorage('raffle_history', []);
+  const [countdownDuration, setCountdownDuration] = useLocalStorage('raffle_countdownDuration', 3, {
+    validate: isIntegerInRange(MIN_COUNTDOWN, MAX_COUNTDOWN)
+  });
+  const [isNoRepeatEnabled, setIsNoRepeatEnabled] = useLocalStorage('raffle_isNoRepeatEnabled', true);
+  const [isSoundEnabled, setIsSoundEnabled] = useLocalStorage('raffle_isSoundEnabled', false);
+  const [history, setHistory] = useLocalStorage('raffle_history', [], { validate: isValidHistory });
 
   // Transient state (not persisted)
   const [isRaffling, setIsRaffling] = useState(false);
@@ -39,17 +67,45 @@ export const RaffleProvider = ({ children }) => {
   const [revealedCount, setRevealedCount] = useState(0);
   const [currentCount, setCurrentCount] = useState(null);
 
-  // Ref to track countdown interval for cleanup
+  // Pending timers, so a reset can cancel an in-flight raffle
   const countdownIntervalRef = useRef(null);
+  const timeoutsRef = useRef(new Set());
+
+  const schedule = useCallback((fn, ms) => {
+    const id = setTimeout(() => {
+      timeoutsRef.current.delete(id);
+      fn();
+    }, ms);
+    timeoutsRef.current.add(id);
+  }, []);
+
+  const cancelPendingTimers = useCallback(() => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current.clear();
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => cancelPendingTimers, [cancelPendingTimers]);
+
+  // Numbers already drawn with the current digit count
+  const drawnNumbers = useMemo(() => new Set(
+    history.map(entry => entry.number).filter(number => number.length === digitCount)
+  ), [history, digitCount]);
+
+  const totalNumbers = 10 ** digitCount;
+  const availableCount = isNoRepeatEnabled ? totalNumbers - drawnNumbers.size : totalNumbers;
 
   /**
-   * Generates a random number with the length based on digitCount
+   * Generates a random number with the length based on digitCount.
+   * Returns null if no-repeat is enabled and every number was already drawn.
    */
-  const generateWinner = useCallback(() => {
-    const max = Math.pow(10, digitCount);
-    const winningNumber = Math.floor(Math.random() * max);
-    return winningNumber.toString().padStart(digitCount, '0');
-  }, [digitCount]);
+  const generateWinner = useCallback(() => (
+    pickWinner(digitCount, isNoRepeatEnabled ? drawnNumbers : undefined)
+  ), [digitCount, isNoRepeatEnabled, drawnNumbers]);
 
   /**
    * Adds winner to history
@@ -66,24 +122,21 @@ export const RaffleProvider = ({ children }) => {
     setWinner(null);
     setRevealedCount(0);
 
-    setTimeout(() => {
+    schedule(() => {
       const newWinner = generateWinner();
+      setIsRaffling(false);
+      if (newWinner === null) return;
       setWinner(newWinner);
       setRevealedCount(digitCount);
-      setIsRaffling(false);
       addToHistory(newWinner);
-    }, 800);
-  }, [digitCount, generateWinner, addToHistory]);
+    }, TRADITIONAL_SHUFFLE_MS);
+  }, [digitCount, generateWinner, addToHistory, schedule]);
 
   /**
    * Helper to run a callback with or without countdown
    */
   const runWithCountdown = useCallback((callback) => {
-    // Cleanup any existing countdown
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
+    cancelPendingTimers();
 
     if (isCountdownEnabled) {
       let count = countdownDuration;
@@ -96,25 +149,25 @@ export const RaffleProvider = ({ children }) => {
         } else {
           clearInterval(countdownIntervalRef.current);
           countdownIntervalRef.current = null;
-          setCurrentCount('¡MATRACA!');
-          setTimeout(() => {
+          setCurrentCount(GO_MESSAGE);
+          schedule(() => {
             setCurrentCount(null);
             callback();
-          }, 800);
+          }, GO_MESSAGE_MS);
         }
       }, 1000);
     } else {
       callback();
     }
-  }, [isCountdownEnabled, countdownDuration]);
+  }, [isCountdownEnabled, countdownDuration, cancelPendingTimers, schedule]);
 
   /**
    * Traditional raffle: everything is revealed after a short delay
    */
   const runTraditionalRaffle = useCallback(() => {
-    if (isRaffling || currentCount !== null) return;
+    if (isRaffling || currentCount !== null || availableCount === 0) return;
     runWithCountdown(executeRaffle);
-  }, [isRaffling, currentCount, runWithCountdown, executeRaffle]);
+  }, [isRaffling, currentCount, availableCount, runWithCountdown, executeRaffle]);
 
   /**
    * Digit by digit raffle: each step reveals one more digit
@@ -124,29 +177,31 @@ export const RaffleProvider = ({ children }) => {
 
     // Start a new raffle if none exists or if the previous one is finished
     if (!winner || revealedCount >= digitCount) {
+      if (availableCount === 0) return;
 
       const startNewDigitRaffle = () => {
         setIsRaffling(true);
         setRevealedCount(0);
         setWinner(null);
 
-        setTimeout(() => {
+        schedule(() => {
           const newWinner = generateWinner();
+          setIsRaffling(false);
+          if (newWinner === null) return;
           setWinner(newWinner);
           setRevealedCount(1);
-          setIsRaffling(false);
-        }, 500);
+          if (digitCount === 1) addToHistory(newWinner);
+        }, DIGIT_STEP_MS);
       };
 
       runWithCountdown(startNewDigitRaffle);
 
-    } else if (revealedCount < digitCount) {
+    } else {
       // Reveal the next digit
-
       const revealNextDigit = () => {
         setIsRaffling(true);
 
-        setTimeout(() => {
+        schedule(() => {
           const newCount = revealedCount + 1;
           setRevealedCount(newCount);
 
@@ -155,29 +210,29 @@ export const RaffleProvider = ({ children }) => {
             addToHistory(winner);
           }
           setIsRaffling(false);
-        }, 500);
+        }, DIGIT_STEP_MS);
       };
 
       runWithCountdown(revealNextDigit);
     }
-  }, [isRaffling, currentCount, winner, revealedCount, digitCount, generateWinner, addToHistory, runWithCountdown]);
+  }, [isRaffling, currentCount, winner, revealedCount, digitCount, availableCount, generateWinner, addToHistory, runWithCountdown, schedule]);
 
   const resetRaffle = useCallback(() => {
-    // Cleanup countdown if running
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
+    cancelPendingTimers();
     setCurrentCount(null);
     setWinner(null);
     setIsRaffling(false);
     setRevealedCount(0);
-  }, []);
+  }, [cancelPendingTimers]);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
     resetRaffle();
   }, [setHistory, resetRaffle]);
+
+  const deleteHistoryEntry = useCallback((id) => {
+    setHistory(prev => prev.filter(entry => entry.id !== id));
+  }, [setHistory]);
 
   const updateWinnerName = useCallback((id, name) => {
     setHistory(prev => prev.map(entry =>
@@ -203,7 +258,14 @@ export const RaffleProvider = ({ children }) => {
     setIsCountdownEnabled,
     countdownDuration,
     setCountdownDuration,
+    isNoRepeatEnabled,
+    setIsNoRepeatEnabled,
+    isSoundEnabled,
+    setIsSoundEnabled,
+    availableCount,
+    totalNumbers,
     clearHistory,
+    deleteHistoryEntry,
     updateWinnerName
   }), [
     digitCount, setDigitCount,
@@ -214,7 +276,10 @@ export const RaffleProvider = ({ children }) => {
     history, currentCount,
     isCountdownEnabled, setIsCountdownEnabled,
     countdownDuration, setCountdownDuration,
-    clearHistory, updateWinnerName
+    isNoRepeatEnabled, setIsNoRepeatEnabled,
+    isSoundEnabled, setIsSoundEnabled,
+    availableCount, totalNumbers,
+    clearHistory, deleteHistoryEntry, updateWinnerName
   ]);
 
   return (

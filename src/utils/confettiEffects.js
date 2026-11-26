@@ -6,10 +6,18 @@ const CELEBRATION_DURATION = 5000;
 
 const randomInRange = (min, max) => Math.random() * (max - min) + min;
 
+export const prefersReducedMotion = () =>
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 /**
- * Runs the winner celebration confetti animation
+ * Runs the winner celebration confetti animation.
+ * Skipped entirely when the user prefers reduced motion.
  */
 export const runWinnerCelebration = () => {
+    if (prefersReducedMotion()) return;
+
     const animationEnd = Date.now() + CELEBRATION_DURATION;
 
     const frame = () => {
@@ -23,6 +31,7 @@ export const runWinnerCelebration = () => {
             spread: 80,
             origin: { x: 0, y: 0.6 },
             colors: BRAND_COLORS,
+            disableForReducedMotion: true,
             scalar: 1.2,
             drift: 1,
         });
@@ -32,6 +41,7 @@ export const runWinnerCelebration = () => {
             spread: 80,
             origin: { x: 1, y: 0.6 },
             colors: BRAND_COLORS,
+            disableForReducedMotion: true,
             scalar: 1.2,
             drift: -1,
         });
@@ -42,6 +52,7 @@ export const runWinnerCelebration = () => {
                 particleCount: 1,
                 origin: { x: Math.random(), y: 1.2 },
                 colors: BRAND_COLORS,
+                disableForReducedMotion: true,
                 shapes: ['circle'],
                 gravity: 0.25,
                 scalar: randomInRange(1.0, 3.5),
@@ -61,6 +72,7 @@ export const runWinnerCelebration = () => {
                 spread: 360,
                 origin: { x: randomInRange(0.1, 0.9), y: randomInRange(0.1, 0.5) },
                 colors: BRAND_COLORS,
+                disableForReducedMotion: true,
                 scalar: 0.7,
                 gravity: 0.5,
                 ticks: 60,
@@ -79,6 +91,7 @@ export const runWinnerCelebration = () => {
         spread: 100,
         origin: { y: 0.6 },
         colors: BRAND_COLORS,
+        disableForReducedMotion: true,
         scalar: 1.5,
         zIndex: 100
     });

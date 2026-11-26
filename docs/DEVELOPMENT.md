@@ -2,7 +2,7 @@
 
 ## Requisitos previos
 
-- Node.js >= 20
+- Node.js >= 22 (lo exigen Vitest 5 y jsdom)
 - pnpm >= 9 (`npm install -g pnpm`)
 
 ## Configuración inicial
@@ -24,8 +24,21 @@ El servidor de desarrollo arranca en `http://localhost:5173/Rifas-Pacorenos/` (p
 | `pnpm build` | Build de producción en `dist/` |
 | `pnpm preview` | Vista previa del build de producción |
 | `pnpm lint` | ESLint sobre todos los archivos `.js`/`.jsx` del repo (excepto `dist/`) |
+| `pnpm test` | Ejecuta todos los tests una vez (Vitest) |
+| `pnpm test:watch` | Tests en modo watch |
 
-No hay suite de tests: verificar cambios con `pnpm lint`, `pnpm build` y prueba manual en el navegador.
+## Tests
+
+Vitest con entorno `jsdom` y Testing Library; la configuración está en el bloque `test` de `vite.config.js` y el setup (limpia el DOM y `localStorage` tras cada test) en `src/test/setup.js`. Los tests viven junto al código (`*.test.js` / `*.test.jsx`).
+
+```bash
+pnpm test src/context/RaffleContext.test.jsx   # un archivo
+pnpm test -t "no-repeat"                        # tests cuyo nombre coincide
+```
+
+- Los tests del contexto usan `vi.useFakeTimers()` y las constantes de tiempo exportadas (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `GO_MESSAGE_MS`) para avanzar la animación.
+- La configuración inicial se pone en `localStorage` antes de renderizar (p. ej. `raffle_isCountdownEnabled = 'false'`).
+- `App.test.jsx` mockea `canvas-confetti`, porque jsdom no tiene canvas.
 
 ## Convenciones de código
 
@@ -91,13 +104,19 @@ Toda la lógica del sorteo vive en `src/context/RaffleContext.jsx`. Las funcione
 - `runTraditionalRaffle()` — modo tradicional (todo de golpe)
 - `runDigitRaffleStep()` — modo manual (dígito a dígito)
 - `runWithCountdown()` — envuelve cualquier callback con el countdown opcional
-- `resetRaffle()` — cancela el countdown y limpia el estado de la rifa
+- `resetRaffle()` — cancela el countdown y cualquier temporizador pendiente, y limpia el estado de la rifa
+
+Todos los `setTimeout` de la rifa deben crearse con el helper `schedule()` del contexto (no con `setTimeout` directo), para que `resetRaffle()` y el desmontaje puedan cancelarlos. El azar sale de `src/utils/random.js` (`crypto.getRandomValues()`); no usar `Math.random()` para elegir ganadores.
 
 ## Agregar un nuevo efecto de celebración
 
 Los efectos están en `src/utils/confettiEffects.js`. Exporta `runWinnerCelebration()`, que se llama desde `RaffleContent` en `App.jsx` cuando la rifa termina (`winner && revealedCount === digitCount`).
 
 Para agregar un efecto continuo, añadir una llamada a `confetti()` dentro de la función `frame()` (bucle `requestAnimationFrame` que dura `CELEBRATION_DURATION`, 5 s); para efectos esporádicos, condicionarla con `Math.random() < p`. Para un efecto único al inicio, añadirlo junto al "Initial Massive Blast".
+
+## Agregar una opción persistida
+
+Usar `useLocalStorage(clave, default, { validate })` en `RaffleContext.jsx`. El tipo del default decide cómo se lee el valor guardado; si el valor está corrupto o `validate` devuelve `false`, se usa el default. Exponer el valor y su setter en el `value` del contexto y agregar el control en `SettingsPanel.jsx`.
 
 ## Linting
 
@@ -111,6 +130,7 @@ pnpm lint --fix
 
 - El historial de ganadores se puede inspeccionar en DevTools → Application → Local Storage
 - Para resetear todo el estado, borrar las claves `raffle_*` de localStorage
+- Si el sistema tiene activado "reducir movimiento", la celebración no se muestra (`prefersReducedMotion()` en `confettiEffects.js`)
 - Los efectos de confetti se pueden probar abriendo la consola y ejecutando:
 
 ```js

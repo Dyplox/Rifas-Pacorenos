@@ -1,7 +1,8 @@
 import { memo, useCallback, useState } from 'react';
 import { useRaffle } from '../context/RaffleContext';
+import { downloadHistoryCsv, formatEntryDate } from '../utils/historyExport';
 
-const HistoryItem = memo(({ record, index, onUpdateName }) => {
+const HistoryItem = memo(({ record, index, onUpdateName, onDelete }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(record.winnerName || '');
 
@@ -19,14 +20,25 @@ const HistoryItem = memo(({ record, index, onUpdateName }) => {
         }
     };
 
+    const date = formatEntryDate(record);
+
     return (
         <div className={`history-item ${index === 0 ? 'latest' : ''}`}>
+            <button
+                type="button"
+                className="history-delete"
+                onClick={() => onDelete(record)}
+                aria-label={`Eliminar el número ${record.number} del historial`}
+                title="Eliminar del historial"
+            >
+                ✕
+            </button>
             <div className="history-main">
                 <span className="history-number">
                     {record.number}
                 </span>
                 <span className="history-time">
-                    {record.timestamp}
+                    {date ? `${date} · ${record.timestamp}` : record.timestamp}
                 </span>
             </div>
             <div className="history-winner-name">
@@ -58,26 +70,50 @@ const HistoryItem = memo(({ record, index, onUpdateName }) => {
 HistoryItem.displayName = 'HistoryItem';
 
 const RaffleHistory = memo(() => {
-    const { history, updateWinnerName } = useRaffle();
+    const { history, updateWinnerName, deleteHistoryEntry } = useRaffle();
 
     const handleUpdateName = useCallback((id, name) => {
         updateWinnerName(id, name);
     }, [updateWinnerName]);
 
+    const handleDelete = useCallback((record) => {
+        if (window.confirm(`¿Eliminar el número ${record.number} del historial?`)) {
+            deleteHistoryEntry(record.id);
+        }
+    }, [deleteHistoryEntry]);
+
+    const handleExport = useCallback(() => {
+        downloadHistoryCsv(history);
+    }, [history]);
+
+    const hasHistory = history && history.length > 0;
+
     return (
         <aside className="history-sidebar">
-            <h3 className="history-title">
-                📋 Historial
-            </h3>
+            <div className="history-header">
+                <h3 className="history-title">
+                    📋 Historial
+                </h3>
+                <button
+                    type="button"
+                    className="history-export"
+                    onClick={handleExport}
+                    disabled={!hasHistory}
+                    title="Descargar historial en CSV"
+                >
+                    ⬇ CSV
+                </button>
+            </div>
 
             <div className="history-list">
-                {history && history.length > 0 ? (
+                {hasHistory ? (
                     history.map((record, index) => (
                         <HistoryItem
                             key={record.id}
                             record={record}
                             index={index}
                             onUpdateName={handleUpdateName}
+                            onDelete={handleDelete}
                         />
                     ))
                 ) : (

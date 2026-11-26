@@ -1,6 +1,8 @@
-import { useEffect, useState, useMemo, memo } from 'react';
+import { useEffect, useEffectEvent, useState, useMemo, memo } from 'react';
 import { RaffleProvider, useRaffle } from './context/RaffleContext';
 import { runWinnerCelebration } from './utils/confettiEffects';
+import { playFanfare, playReveal } from './utils/sound';
+import FullscreenButton from './components/FullscreenButton';
 import Layout from './components/Layout';
 import RaffleDisplay from './components/RaffleDisplay';
 import RaffleHistory from './components/RaffleHistory';
@@ -9,7 +11,10 @@ import CountdownOverlay from './components/CountdownOverlay';
 import Footer from './components/Footer';
 import logoPacoreños from './assets/images/pacomede.jpg';
 
-const RaffleContent = memo(() => {
+// Elements whose own Space/Enter behavior must not trigger the raffle
+const INTERACTIVE_SELECTOR = 'input, textarea, select, button, a, [contenteditable="true"]';
+
+const RaffleContent = memo(({ shortcutsEnabled }) => {
   const {
     runTraditionalRaffle,
     runDigitRaffleStep,
@@ -17,10 +22,17 @@ const RaffleContent = memo(() => {
     winner,
     revealedCount,
     digitCount,
-    isManualRevealEnabled
+    isManualRevealEnabled,
+    isNoRepeatEnabled,
+    isSoundEnabled,
+    availableCount,
+    currentCount
   } = useRaffle();
 
-  const isFinished = winner && revealedCount === digitCount;
+  const isFinished = Boolean(winner) && revealedCount === digitCount;
+  // No numbers left (only matters when a new raffle would start)
+  const isExhausted = availableCount === 0 && (!winner || isFinished);
+  const isBusy = isRaffling || currentCount !== null;
 
   // Trigger celebration effect when raffle finishes
   useEffect(() => {
@@ -28,6 +40,17 @@ const RaffleContent = memo(() => {
       runWinnerCelebration();
     }
   }, [isFinished]);
+
+  // Sounds: fanfare on winner, blip on each intermediate manual reveal
+  const playRevealSound = useEffectEvent((isLastDigit) => {
+    if (!isSoundEnabled) return;
+    if (isLastDigit) playFanfare();
+    else playReveal();
+  });
+  useEffect(() => {
+    if (!winner || revealedCount === 0) return;
+    playRevealSound(revealedCount === digitCount);
+  }, [winner, revealedCount, digitCount]);
 
   const handleRaffleClick = () => {
     if (isManualRevealEnabled) {
@@ -37,15 +60,35 @@ const RaffleContent = memo(() => {
     }
   };
 
+  // Keyboard shortcut: Space / Enter starts the raffle or reveals the next digit
+  const onShortcut = useEffectEvent(() => {
+    if (!isBusy && !isExhausted) handleRaffleClick();
+  });
+  useEffect(() => {
+    if (!shortcutsEnabled) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key !== ' ' && e.key !== 'Enter') return;
+      if (e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (e.target instanceof Element && e.target.closest(INTERACTIVE_SELECTOR)) return;
+      e.preventDefault();
+      onShortcut();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [shortcutsEnabled]);
+
   // Memoize button text to avoid recalculating
   const buttonText = useMemo(() => {
     if (isRaffling) return 'Rifando...';
+    if (isExhausted) return 'Sin números disponibles';
     if (isFinished) return 'Rifar de Nuevo';
     if (isManualRevealEnabled) {
       return winner ? 'Revelar Siguiente' : 'Revelar Dígito';
     }
     return 'Iniciar Rifa';
-  }, [isRaffling, isFinished, isManualRevealEnabled, winner]);
+  }, [isRaffling, isExhausted, isFinished, isManualRevealEnabled, winner]);
 
   return (
     <div className="cards-stack">
@@ -57,12 +100,20 @@ const RaffleContent = memo(() => {
             <button
               className="btn-primary"
               onClick={handleRaffleClick}
-              disabled={isRaffling}
+              disabled={isBusy || isExhausted}
               aria-label={buttonText}
             >
               {buttonText}
             </button>
           </div>
+          <p className="raffle-hint">
+            {isNoRepeatEnabled && (
+              <span>
+                {availableCount === 1 ? 'Queda 1 número disponible' : `Quedan ${availableCount} números disponibles`}
+              </span>
+            )}
+            <span className="shortcut-hint">Espacio o Enter para sortear</span>
+          </p>
         </div>
       </div>
 
@@ -107,16 +158,19 @@ function App() {
                 </h1>
               </div>
 
-              <button
-                onClick={handleOpenSettings}
-                className="btn-settings"
-                aria-label="Abrir configuración"
-              >
-                ⚙️ Configurar
-              </button>
+              <div className="header-actions">
+                <FullscreenButton />
+                <button
+                  onClick={handleOpenSettings}
+                  className="btn-settings"
+                  aria-label="Abrir configuración"
+                >
+                  ⚙️ Configurar
+                </button>
+              </div>
             </header>
 
-            <RaffleContent />
+            <RaffleContent shortcutsEnabled={!isSettingsOpen} />
           </div>
         </div>
         <SettingsPanel
