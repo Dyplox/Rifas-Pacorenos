@@ -33,6 +33,7 @@ Proveedor de estado global (`RaffleProvider`). Exporta el hook `useRaffle()` par
 | `updateWinnerName(id, name)` | `function` | Edita el nombre de un ganador en el historial |
 | `clearHistory()` | `function` | Borra todo el historial y resetea la rifa |
 | `deleteHistoryEntry(id)` | `function` | Borra una entrada (su número vuelve a estar disponible) |
+| `restoreHistoryEntry(entry, index)` | `function` | Vuelve a poner una entrada borrada en su posición (deshacer) |
 | `setDigitCount()` | `function` | Cambia la cantidad de dígitos |
 | `setIsManualRevealEnabled()` | `function` | Activa/desactiva modo manual |
 | `setIsCountdownEnabled()` | `function` | Activa/desactiva countdown |
@@ -62,7 +63,7 @@ Las entradas creadas antes de esta versión pueden tener `id` numérico (`Date.n
 
 `src/App.jsx`
 
-Componente raíz. Envuelve todo en `RaffleProvider`, maneja el estado `isSettingsOpen` del panel de configuración y muestra en el header `FullscreenButton` y el botón de configuración.
+Componente raíz. Envuelve todo en `RaffleProvider`, maneja el estado `isSettingsOpen` del panel de configuración y muestra en el header el aviso "Sin conexión" (`OfflineBadge`, con `useOnlineStatus`), `FullscreenButton` y el botón de configuración (solo icono en pantallas ≤ 640 px).
 
 Define internamente `RaffleContent` (memoizado, no exportado), que:
 
@@ -74,6 +75,8 @@ Define internamente `RaffleContent` (memoizado, no exportado), que:
 - Calcula el texto del botón: `Rifando...`, `Sin números disponibles`, `Rifar de Nuevo`, `Revelar Dígito`, `Revelar Siguiente` o `Iniciar Rifa`
 - El botón se deshabilita durante la rifa, el countdown o si no quedan números
 - Debajo del botón muestra cuántos números quedan (con no-repetir activo) y la pista del atajo (oculta en pantallas ≤ 640 px)
+- La tarjeta del resultado es una región `aria-live="polite"`: los lectores de pantalla anuncian al ganador
+- El atajo y los sonidos usan `useLatestCallback` para leer siempre el estado actual
 - Muestra la tarjeta "¡Tenemos un Ganador!" / "Próximo Ganador"
 
 ---
@@ -98,7 +101,7 @@ Ninguna — consume `useRaffle()` directamente.
 | Dígito revelado | Número real |
 | Ganador completo | Clase `winner` en el contenedor: borde dorado + animación `float` |
 
-Las cajas se calculan con `useMemo`.
+Las cajas se calculan con `useMemo`. El contenedor recibe `--digits` (usado por el CSS para dimensionar las cajas) y `role="img"` con un `aria-label` que describe el estado ("Número oculto de 3 dígitos", "Dígitos revelados: 4. Faltan 2", "Número ganador: 4 2 7"); las cajas individuales son `aria-hidden`. El `*` de los dígitos ocultos va en `.digit-mask` para centrarlo ópticamente.
 
 ---
 
@@ -113,8 +116,9 @@ Panel lateral con el registro de ganadores. Muestra el historial completo (no ti
 - El ganador más reciente (`index === 0`) se destaca con la clase `latest` (fondo verde)
 - Cada entrada muestra: número ganador, fecha y hora (`dd/mm/aaaa · HH:MM:SS`; solo hora en entradas antiguas) y nombre opcional
 - Botón **⬇ CSV** en la cabecera: descarga `rifa-historial-AAAA-MM-DD.csv` (columnas Número, Nombre, Fecha, Hora; UTF-8 con BOM para Excel). Deshabilitado si no hay historial
-- Botón **✕** en cada entrada (visible al pasar el ratón; siempre visible en pantallas táctiles): elimina esa entrada tras confirmar
-- Al hacer clic en el nombre (o en "+ Agregar nombre") se abre un input inline
+- Lista ordenada (`<ol>`) con un contador de entradas junto al título
+- Botón **✕** en cada entrada (44×44 px; con ratón aparece al pasar por encima, en pantallas táctiles siempre visible): elimina la entrada al instante y muestra `UndoToast` con "Deshacer" durante 6 s
+- El nombre es un botón (accesible con teclado); al pulsarlo se abre un input inline
 - `Enter` o perder el foco guarda el nombre; `Escape` cancela
 - Muestra "Aún no hay resultados" si el historial está vacío
 
@@ -124,7 +128,7 @@ Panel lateral con el registro de ganadores. Muestra el historial completo (no ti
 
 `src/components/SettingsPanel.jsx`
 
-Modal de configuración con overlay oscuro. Clic fuera del modal o en "Guardar" lo cierra (los cambios ya se aplican en vivo).
+Usa `Modal` (diálogo accesible). Esc, clic fuera o "Guardar" lo cierran (los cambios ya se aplican en vivo). En pantallas ≤ 640 px se muestra como hoja inferior.
 
 ### Props
 
@@ -143,9 +147,9 @@ Modal de configuración con overlay oscuro. Clic fuera del modal o en "Guardar" 
 | Revelación por dígito (manual) | checkbox | Activado / Desactivado |
 | No repetir números ya sorteados | checkbox | Activado (default) / Desactivado |
 | Activar sonido | checkbox | Activado / Desactivado (default) |
-| Borrar historial | botón | Requiere confirmación (`window.confirm`) |
+| Borrar historial | botón | Abre `ConfirmDialog` ("Borrar todo" / "Cancelar"); deshabilitado si el historial está vacío |
 
-Los valores fuera de rango no se aplican. Los inputs y checkboxes se deshabilitan mientras `isRaffling === true`, salvo el de sonido y el botón de borrar historial.
+Los valores fuera de rango no se aplican. Los inputs y checkboxes se deshabilitan mientras `isRaffling === true`, salvo el de sonido.
 
 ---
 
@@ -173,6 +177,34 @@ Botón del header que activa o sale de pantalla completa (`requestFullscreen` / 
 
 ---
 
+## Modal
+
+`src/components/Modal.jsx`
+
+Diálogo reutilizable: `role="dialog"`, `aria-modal`, etiquetado por su título. Al abrir mueve el foco dentro (al primer control o a `initialFocusRef`), atrapa Tab/Shift+Tab, se cierra con Esc o clic en el fondo y devuelve el foco al elemento que lo abrió.
+
+Props: `isOpen`, `onClose`, `title`, `className`, `initialFocusRef`.
+
+---
+
+## ConfirmDialog
+
+`src/components/ConfirmDialog.jsx`
+
+Reemplazo con estilo propio de `window.confirm()` sobre `Modal`. El foco empieza en "Cancelar" para que Enter nunca confirme una acción destructiva por accidente.
+
+Props: `isOpen`, `title`, `message`, `confirmLabel`, `onConfirm`, `onCancel`.
+
+---
+
+## UndoToast
+
+`src/components/UndoToast.jsx`
+
+Aviso fijo abajo (`role="status"`) con botones "Deshacer" y cerrar. Se descarta solo tras `UNDO_TIMEOUT_MS` (6 s); se vuelve a montar con `key` para reiniciar el tiempo.
+
+---
+
 ## Layout
 
 `src/components/Layout.jsx`
@@ -186,6 +218,14 @@ Contenedor simple (`.app-container > main`) que envuelve el contenido principal.
 `src/components/Footer.jsx`
 
 Pie de página con el año actual calculado dinámicamente, copyright de Pacoreños en Medellín y Antioquia y enlace al desarrollador.
+
+---
+
+## useLatestCallback / useOnlineStatus
+
+`src/hooks/useLatestCallback.js` — devuelve una función estable que siempre llama a la última versión del callback (ref actualizada en `useLayoutEffect`). Se usa para listeners registrados en efectos; reemplaza a `useEffectEvent`, que en esta app dejaba listeners con estado antiguo.
+
+`src/hooks/useOnlineStatus.js` — `navigator.onLine` con `useSyncExternalStore` y los eventos `online`/`offline`.
 
 ---
 

@@ -125,6 +125,14 @@ El hook `useLocalStorage` detecta el tipo del valor inicial (boolean, number, ob
 
 `RaffleContent` (en `App.jsx`) reacciona a los cambios de `winner`/`revealedCount`: confetti (`runWinnerCelebration`, que no hace nada con `prefers-reduced-motion`) y, si el sonido está activo, fanfarria o sonido de revelación. `CountdownOverlay` reproduce los sonidos del countdown. `src/index.css` termina con un override global de `prefers-reduced-motion` que anula animaciones y transiciones.
 
+## PWA
+
+`vite-plugin-pwa` genera el manifest y un service worker (Workbox) que precachea todo el build. Como no hay backend y todo el estado está en `localStorage`, la app funciona completa sin conexión tras la primera visita. Ver [DEPLOYMENT.md](DEPLOYMENT.md#pwa-y-caché).
+
+## Diseño responsive
+
+Una sola hoja de estilos (`src/index.css`) con tamaños fluidos (`clamp`, `dvh`, `vmin`) y *container queries*: los dígitos se dimensionan según el ancho de `.card-raffle` y la cantidad de dígitos, limitados por la altura disponible para que el botón y el mensaje del ganador quepan sin scroll. Escritorio/proyector: historial a la izquierda; ≤ 1024 px: historial debajo en cuadrícula; ≤ 640 px: una columna, botones solo con icono y configuración como hoja inferior. Playwright verifica el resultado en 6 tamaños de pantalla.
+
 ## Despliegue
 
 La app se despliega como sitio estático en GitHub Pages. El `base` de Vite se configura a `/Rifas-Pacorenos/` para que los assets se resuelvan correctamente bajo ese subpath. Ver [DEPLOYMENT.md](DEPLOYMENT.md).

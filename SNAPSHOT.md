@@ -2,7 +2,7 @@
 _Actualizado: 2026-11-26_
 
 ## Stack
-React 19 + Vite 7 + CSS puro + canvas-confetti + Web Audio — SPA sin backend, tests con Vitest, deploy en GitHub Pages vía pnpm
+React 19 + Vite 7 + CSS puro + canvas-confetti + Web Audio — SPA sin backend e instalable (PWA, funciona sin conexión), tests con Vitest + Playwright, deploy en GitHub Pages vía pnpm 12
 
 ## Propósito
 App de rifas digitales en vivo para la comunidad Pacoreños en Medellín. Sortea números con animación, cuenta regresiva configurable y celebración con confetti/fuegos.
@@ -27,6 +27,9 @@ App de rifas digitales en vivo para la comunidad Pacoreños en Medellín. Sortea
 | `src/utils/historyExport.js` | Fecha de las entradas y exportación CSV |
 | `src/utils/sound.js` | Sonidos sintetizados (tick, ¡MATRACA!, revelación, fanfarria) |
 | `src/components/FullscreenButton.jsx` | Botón de pantalla completa |
+| `src/components/Modal.jsx` / `ConfirmDialog.jsx` / `UndoToast.jsx` | Diálogo accesible, confirmación propia, aviso con deshacer |
+| `src/hooks/useLatestCallback.js` | Callback estable para listeners (reemplaza `useEffectEvent`) |
+| `e2e/` | Playwright: layout en 6 tamaños, flujo con teclado, PWA offline |
 | `src/index.css` | ~850 líneas: variables CSS, animaciones, glass morphism, responsive |
 
 ## Convenciones
@@ -42,7 +45,8 @@ App de rifas digitales en vivo para la comunidad Pacoreños en Medellín. Sortea
 
 ## Estado actual del trabajo
 - Documentación sincronizada con el código (2026-11-26): `README.md`, `docs/*.md`, `CLAUDE.md`
-- Tests con Vitest (`pnpm test`); CI en PRs y lint+tests antes de cada deploy
+- Tests con Vitest (`pnpm test`) y Playwright (`pnpm test:e2e`); CI (verify + e2e) en PRs y lint+tests antes de cada deploy
+- Dependabot semanal (npm) y mensual (GitHub Actions)
 - Skills de optimización de tokens instalados: `project-snapshot`, `token-optimizer`, `session-compact`
 - Hooks automáticos configurados en `~/.claude/settings.json` (SessionStart + Stop)
 - Deploy activo en GitHub Pages bajo `/Rifas-Pacorenos/` (push a `main` o `feature/ux-pacorenos-medellin`)

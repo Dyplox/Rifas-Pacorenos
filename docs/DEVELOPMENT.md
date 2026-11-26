@@ -2,8 +2,8 @@
 
 ## Requisitos previos
 
-- Node.js >= 22 (lo exigen Vitest 5 y jsdom)
-- pnpm >= 9 (`npm install -g pnpm`)
+- Node.js >= 22.12 (lo exigen Vitest 5 y jsdom)
+- pnpm 12 — la versión exacta está en `packageManager` de `package.json`; con `corepack enable` se usa automáticamente
 
 ## Configuración inicial
 
@@ -26,6 +26,7 @@ El servidor de desarrollo arranca en `http://localhost:5173/Rifas-Pacorenos/` (p
 | `pnpm lint` | ESLint sobre todos los archivos `.js`/`.jsx` del repo (excepto `dist/`) |
 | `pnpm test` | Ejecuta todos los tests una vez (Vitest) |
 | `pnpm test:watch` | Tests en modo watch |
+| `pnpm test:e2e` | Tests Playwright contra el build de producción (6 tamaños de pantalla) |
 
 ## Tests
 
@@ -39,6 +40,25 @@ pnpm test -t "no-repeat"                        # tests cuyo nombre coincide
 - Los tests del contexto usan `vi.useFakeTimers()` y las constantes de tiempo exportadas (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `GO_MESSAGE_MS`) para avanzar la animación.
 - La configuración inicial se pone en `localStorage` antes de renderizar (p. ej. `raffle_isCountdownEnabled = 'false'`).
 - `App.test.jsx` mockea `canvas-confetti`, porque jsdom no tiene canvas.
+
+### Tests end-to-end (Playwright)
+
+Están en `e2e/` y corren contra `pnpm build && pnpm preview` (incluye el service worker). La primera vez hay que instalar el navegador:
+
+```bash
+pnpm exec playwright install chromium
+pnpm test:e2e                              # todo, en los 6 proyectos
+pnpm test:e2e --project=phone              # un tamaño de pantalla
+pnpm test:e2e layout -g "MATRACA"          # un archivo / test
+SCREENSHOTS=1 pnpm test:e2e screenshots    # capturas para revisión visual en e2e-screens/
+```
+
+Proyectos (tamaños): `phone` (Pixel 7), `phone-small` (360×640), `phone-landscape`, `tablet` (820×1180), `laptop` (1366×768) y `projector` (1920×1080).
+
+- `layout.spec.js` comprueba en cada tamaño: sin scroll horizontal, dígitos al máximo tamaño posible, botón visible sin hacer scroll, mensaje del ganador visible tras sortear, objetivos táctiles ≥ 44 px, countdown y "¡MATRACA!" dentro de la pantalla, diálogo de configuración accesible.
+- `raffle.spec.js` (solo `laptop`): flujo completo con teclado, deshacer, CSV, borrar historial, foco del diálogo.
+- `pwa.spec.js` (solo `laptop`): manifest e iconos válidos y uso sin conexión tras la primera visita.
+- `helpers.js`: `seedSettings()` (configuración inicial en `localStorage`) y `waitForAnimations()` (medir después de las animaciones de entrada).
 
 ## Convenciones de código
 
@@ -113,6 +133,20 @@ Todos los `setTimeout` de la rifa deben crearse con el helper `schedule()` del c
 Los efectos están en `src/utils/confettiEffects.js`. Exporta `runWinnerCelebration()`, que se llama desde `RaffleContent` en `App.jsx` cuando la rifa termina (`winner && revealedCount === digitCount`).
 
 Para agregar un efecto continuo, añadir una llamada a `confetti()` dentro de la función `frame()` (bucle `requestAnimationFrame` que dura `CELEBRATION_DURATION`, 5 s); para efectos esporádicos, condicionarla con `Math.random() < p`. Para un efecto único al inicio, añadirlo junto al "Initial Massive Blast".
+
+## Diseño responsive
+
+El tamaño de los dígitos se calcula solo en CSS (`.digit-box` en `src/index.css`): `.card-raffle` es un *container* (`container-type: inline-size`) y `RaffleDisplay` pasa `--digits`. Cada caja toma el mínimo entre:
+
+1. el ancho disponible repartido entre los dígitos (`100cqi`),
+2. `30dvh`, y
+3. el alto que queda tras el resto de la interfaz (`--stage-chrome`, medido con Playwright), para que el mensaje del ganador quepa sin scroll.
+
+Si cambias tamaños del header, botón o tarjeta del ganador, ejecuta `pnpm test:e2e layout`: el test "winner message visible" detecta si algo deja de caber, y `layout.spec.js` replica la fórmula de la altura.
+
+## Listeners con estado actual
+
+Para listeners registrados en efectos (atajos de teclado, temporizadores) usar `useLatestCallback` (`src/hooks/`). No usar `useEffectEvent` de React 19.2 aquí: en esta app el listener seguía llamando a una versión antigua de la función (el modo manual reiniciaba la rifa en cada tecla). El test "reveals the next digit … in manual mode" de `App.test.jsx` lo cubre.
 
 ## Agregar una opción persistida
 

@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Package manager is **pnpm** (CI uses pnpm 9, Node 22 — Vitest 5/jsdom need Node ≥ 22). Keep `pnpm-lock.yaml` at `lockfileVersion: '9.0'`.
+Package manager is **pnpm 12**, pinned via `packageManager` in `package.json` (CI's `pnpm/action-setup` reads it). Node ≥ 22.12 (Vitest 5/jsdom). In this environment the shell's lazy nvm wrapper can fail; `source "$NVM_DIR/nvm.sh"` first if `pnpm` is not found.
 
 ```bash
 pnpm install       # install deps
@@ -19,11 +19,18 @@ pnpm lint          # ESLint 9 flat config (react-hooks + react-refresh)
 pnpm test          # Vitest (jsdom), run once
 pnpm test src/context/RaffleContext.test.jsx   # single file
 pnpm test -t "no-repeat"                        # tests matching a name
+pnpm test:e2e                                   # Playwright vs. production build, 6 viewports
+pnpm test:e2e --project=phone layout            # one viewport / one spec file
+SCREENSHOTS=1 pnpm test:e2e screenshots         # review captures in e2e-screens/ (gitignored)
 ```
+
+First e2e run needs `pnpm exec playwright install chromium`.
 
 Tests live next to the code (`*.test.js[x]`); config is the `test` block in `vite.config.js`, setup in `src/test/setup.js` (clears DOM + localStorage). Context tests use fake timers with the exported timing constants (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `GO_MESSAGE_MS`). `App.test.jsx` mocks `canvas-confetti` (jsdom has no canvas).
 
-CI: `.github/workflows/ci.yml` runs lint + test + build on PRs; `deploy.yml` runs lint + test before building and deploying.
+E2E (`e2e/`, `playwright.config.js`) runs against `pnpm build && pnpm preview` on port 4173, so the service worker is real. `layout.spec.js` asserts per viewport: no horizontal scroll, digits as large as the formula allows, raffle button and winner message on screen without scrolling, ≥ 44px touch targets, countdown/“¡MATRACA!” within the viewport. Functional (`raffle.spec.js`) and PWA (`pwa.spec.js`) specs run only on the `laptop` project. Use `seedSettings()` / `waitForAnimations()` from `e2e/helpers.js`; measure after entrance animations or the 20px slide-in skews boxes.
+
+CI: `.github/workflows/ci.yml` runs `verify` (lint + test + build) and `e2e` (Playwright, uploads report on failure) on PRs; `deploy.yml` runs lint + test before building and deploying. Dependabot: `.github/dependabot.yml`.
 
 ## Architecture
 
@@ -35,8 +42,13 @@ CI: `.github/workflows/ci.yml` runs lint + test + build on PRs; `deploy.yml` run
   - Winners come from `pickWinner()` in `src/utils/random.js` (`crypto.getRandomValues`, rejection sampling). With no-repeat on (default), numbers already in `history` with the current digit count are excluded; `availableCount === 0` disables raffling. Deleting a history entry makes that number available again.
 - **"Finished" is derived, not stored**: `winner && revealedCount === digitCount`. `App.jsx` (`RaffleContent`) watches this and fires `runWinnerCelebration()` from `src/utils/confettiEffects.js`.
 - **"Finished" side effects** (confetti, sounds) run in `App.jsx`; sounds are synthesized in `src/utils/sound.js` (Web Audio, gated by `isSoundEnabled`). Space/Enter shortcut is a window listener in `RaffleContent`, disabled while settings are open and ignored when focus is on an interactive element.
+- **Listeners registered in effects must use `useLatestCallback`** (`src/hooks/`), not React 19.2's `useEffectEvent`: with `useEffectEvent` the keyboard shortcut kept a stale closure and manual mode restarted the raffle on every key press (covered by the manual-mode test in `App.test.jsx`).
+- **Dialogs**: `Modal.jsx` is the accessible base (role=dialog, Esc, focus trap, focus restore); `SettingsPanel` and `ConfirmDialog` build on it. Don't use `window.confirm` — destructive bulk actions use `ConfirmDialog`, single deletions use `UndoToast` + `restoreHistoryEntry`.
+- **Accessibility**: the result card is an `aria-live` region; `RaffleDisplay` exposes one `aria-label` for the whole number (boxes are `aria-hidden`); `index.html` is `lang="es"`.
+- **PWA**: `vite-plugin-pwa` in `vite.config.js` (autoUpdate, precaches the whole build; icons in `public/`). Disabled in `pnpm dev`.
 - **Persistence**: `src/hooks/useLocalStorage.js` infers deserialization from the type of the default value (boolean, number, object/array → JSON) and accepts `{ validate }`; invalid/corrupted values fall back to the default. Keys: `raffle_digitCount`, `raffle_isManualRevealEnabled`, `raffle_isCountdownEnabled`, `raffle_countdownDuration`, `raffle_isNoRepeatEnabled`, `raffle_isSoundEnabled`, `raffle_history`. Changing a key's default type invalidates existing stored values. History entries: `{ id (UUID), number, winnerName, createdAt (ISO), timestamp }` — older entries may lack `createdAt` and have numeric ids.
-- **Styling**: a single global stylesheet `src/index.css` (CSS variables in `:root`, kebab-case classes, `@keyframes`, responsive breakpoints at 1024px and 640px, a global `prefers-reduced-motion` override at the end; confetti also skips itself under reduced motion). No CSS modules or CSS-in-JS; some inline styles in `App.jsx`.
+- **Styling**: a single global stylesheet `src/index.css` (CSS variables in `:root`, kebab-case classes, fluid `clamp`/`dvh`/`vmin` sizes, breakpoints at 1024px, 640px and a short-landscape query, a global `prefers-reduced-motion` override at the end). No CSS modules or CSS-in-JS; only dynamic values are inline (`--digits`, animation delays).
+- **Digit sizing**: `.card-raffle` is a size container; `.digit-box` `--size` = min(card width / `--digits` (`100cqi`), `30dvh`, height left after `--stage-chrome`). `--stage-chrome` (`150px + 50dvh`) was measured with Playwright so the winner message fits; `layout.spec.js` mirrors this formula — change both together and rerun `pnpm test:e2e layout`.
 - **Conventions**: context handlers are wrapped in `useCallback` and the context value in `useMemo`; heavier components use `React.memo`. One component per file, PascalCase.
 
 ## Deployment
