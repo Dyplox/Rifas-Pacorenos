@@ -2,6 +2,7 @@ import { memo, useState, useEffect, useCallback } from 'react';
 import { useRaffle, MIN_DIGITS, MAX_DIGITS, MIN_COUNTDOWN, MAX_COUNTDOWN } from '../context/RaffleContext';
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
+import { clearAppData } from '../utils/resetApp';
 
 const SettingsPanel = memo(({ isOpen, onClose }) => {
     const {
@@ -17,7 +18,8 @@ const SettingsPanel = memo(({ isOpen, onClose }) => {
 
     const [inputValue, setInputValue] = useState(digitCount);
     const [countdownInputValue, setCountdownInputValue] = useState(countdownDuration);
-    const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+    // Destructive action awaiting confirmation: 'history' | 'all' | null
+    const [confirming, setConfirming] = useState(null);
 
     useEffect(() => {
         setInputValue(digitCount);
@@ -48,16 +50,20 @@ const SettingsPanel = memo(({ isOpen, onClose }) => {
         }
     }, [setCountdownDuration]);
 
-    const handleConfirmClear = useCallback(() => {
+    const handleConfirm = useCallback(() => {
+        if (confirming === 'all') {
+            clearAppData(); // reloads the page
+            return;
+        }
         clearHistory();
-        setIsConfirmingClear(false);
-    }, [clearHistory]);
+        setConfirming(null);
+    }, [confirming, clearHistory]);
 
-    const handleCancelClear = useCallback(() => setIsConfirmingClear(false), []);
+    const handleCancelConfirm = useCallback(() => setConfirming(null), []);
 
     return (
         <>
-            <Modal isOpen={isOpen && !isConfirmingClear} onClose={onClose} title="Configuración" className="settings-content">
+            <Modal isOpen={isOpen && confirming === null} onClose={onClose} title="Configuración" className="settings-content">
                 <div className="settings-field">
                     <label className="field-label" htmlFor="setting-digits">
                         Cantidad de Dígitos
@@ -154,11 +160,22 @@ const SettingsPanel = memo(({ isOpen, onClose }) => {
                     <button
                         type="button"
                         className="btn-danger btn-block"
-                        onClick={() => setIsConfirmingClear(true)}
+                        onClick={() => setConfirming('history')}
                         disabled={history.length === 0}
                     >
                         🗑️ Borrar Historial de Sorteos
                     </button>
+                    <button
+                        type="button"
+                        className="btn-danger btn-block"
+                        onClick={() => setConfirming('all')}
+                        disabled={isRaffling}
+                    >
+                        🧹 Borrar Caché y Datos
+                    </button>
+                    <p className="field-hint">
+                        Restablece la configuración, borra el historial y la copia sin conexión, y recarga la app.
+                    </p>
                 </div>
 
                 <div className="modal-actions">
@@ -169,12 +186,21 @@ const SettingsPanel = memo(({ isOpen, onClose }) => {
             </Modal>
 
             <ConfirmDialog
-                isOpen={isOpen && isConfirmingClear}
+                isOpen={isOpen && confirming === 'history'}
                 title="Borrar historial"
                 message={`Se borrarán los ${history.length} resultados del historial. Esta acción no se puede deshacer.`}
                 confirmLabel="Borrar todo"
-                onConfirm={handleConfirmClear}
-                onCancel={handleCancelClear}
+                onConfirm={handleConfirm}
+                onCancel={handleCancelConfirm}
+            />
+
+            <ConfirmDialog
+                isOpen={isOpen && confirming === 'all'}
+                title="Borrar caché y datos"
+                message={`Se borrarán la configuración y ${history.length === 1 ? 'el resultado' : `los ${history.length} resultados`} del historial, y la app se recargará como recién instalada. Si estás sin conexión, se conserva la copia sin conexión para que la app siga abriendo. Esta acción no se puede deshacer.`}
+                confirmLabel="Borrar y recargar"
+                onConfirm={handleConfirm}
+                onCancel={handleCancelConfirm}
             />
         </>
     );

@@ -131,7 +131,7 @@ El hook `useLocalStorage` detecta el tipo del valor inicial (boolean, number, ob
 
 ## Diseño responsive
 
-Una sola hoja de estilos (`src/index.css`) con tamaños fluidos (`clamp`, `dvh`, `vmin`) y *container queries*: los dígitos se dimensionan según el ancho de `.card-raffle` y la cantidad de dígitos, limitados por la altura disponible para que el botón y el mensaje del ganador quepan sin scroll. Escritorio/proyector: historial a la izquierda; ≤ 1024 px: historial debajo en cuadrícula; ≤ 640 px: una columna, botones solo con icono y configuración como hoja inferior. Playwright verifica el resultado en 6 tamaños de pantalla.
+Una sola hoja de estilos (`src/index.css`) con tamaños fluidos (`clamp`, `dvh`, `vmin`) y *container queries*. La app ocupa exactamente una pantalla, footer incluido: los dígitos llenan el espacio que sobra (en pantallas anchas `.digit-container` es un *size container*) y el historial hace scroll dentro de su panel. Escritorio/proyector: historial a la izquierda; ≤ 1024 px: historial debajo ocupando el alto restante; ≤ 640 px: una columna, botones solo con icono y configuración como hoja inferior. Playwright verifica el resultado en 6 tamaños de pantalla.
 
 ## Despliegue
 

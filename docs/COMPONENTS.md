@@ -75,7 +75,7 @@ Define internamente `RaffleContent` (memoizado, no exportado), que:
 - Calcula el texto del botón: `Rifando...`, `Sin números disponibles`, `Rifar de Nuevo`, `Revelar Dígito`, `Revelar Siguiente` o `Iniciar Rifa`
 - El botón se deshabilita durante la rifa, el countdown o si no quedan números
 - Debajo del botón muestra cuántos números quedan (con no-repetir activo) y la pista del atajo (oculta en pantallas ≤ 640 px)
-- La tarjeta del resultado es una región `aria-live="polite"`: los lectores de pantalla anuncian al ganador
+- La tarjeta del resultado es una región `aria-live="polite"`: los lectores de pantalla anuncian al ganador. Antes del sorteo muestra un marcador punteado ("Aquí aparecerá el ganador", `aria-hidden`) del mismo tamaño que el anuncio, para que el diseño no salte
 - El atajo y los sonidos usan `useLatestCallback` para leer siempre el estado actual
 - Muestra la tarjeta "¡Tenemos un Ganador!" / "Próximo Ganador"
 
@@ -148,6 +148,7 @@ Usa `Modal` (diálogo accesible). Esc, clic fuera o "Guardar" lo cierran (los ca
 | No repetir números ya sorteados | checkbox | Activado (default) / Desactivado |
 | Activar sonido | checkbox | Activado / Desactivado (default) |
 | Borrar historial | botón | Abre `ConfirmDialog` ("Borrar todo" / "Cancelar"); deshabilitado si el historial está vacío |
+| Borrar caché y datos | botón | Abre `ConfirmDialog` ("Borrar y recargar"); llama a `clearAppData()`. Deshabilitado durante una rifa |
 
 Los valores fuera de rango no se aplican. Los inputs y checkboxes se deshabilitan mientras `isRaffling === true`, salvo el de sonido.
 
@@ -265,6 +266,14 @@ const [value, setValue] = useLocalStorage('clave', valorDefault, { validate });
 - `formatEntryDate(entry)` — fecha `dd/mm/aaaa` a partir de `createdAt` (`''` si no existe)
 - `historyToCsv(history)` — CSV con BOM, todos los campos entre comillas; los nombres que empiezan con `=`, `+`, `-` o `@` se prefijan con `'` para evitar fórmulas en Excel
 - `downloadHistoryCsv(history)` — descarga el CSV
+
+---
+
+## resetApp
+
+`src/utils/resetApp.js`
+
+`clearAppData({ reload })` borra `localStorage` y `sessionStorage` y, solo si hay conexión, desregistra el service worker y vacía la Cache Storage (sin conexión se conserva la copia offline para que la app siga abriendo). Después recarga la página. Devuelve qué se borró (usado por los tests).
 
 ---
 

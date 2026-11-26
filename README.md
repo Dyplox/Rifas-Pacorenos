@@ -33,8 +33,8 @@ Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 - **Sonido opcional** (cuenta regresiva, revelación y fanfarria del ganador)
 - **Respeta `prefers-reduced-motion`**: sin confetti ni animaciones si el sistema lo pide
 - **Celebración** con confetti, globos y fuegos artificiales al anunciar el ganador
-- **Configuración persistente** en `localStorage`
-- **Responsive y a gran tamaño** — los dígitos ocupan todo el ancho o alto disponible en móvil, tableta, portátil y proyector, dejando siempre visibles el botón y el mensaje del ganador
+- **Configuración persistente** en `localStorage`, con opción **Borrar caché y datos** para dejar la app como recién instalada
+- **Todo en una sola vista, a gran tamaño** — la app ocupa exactamente la pantalla (pie de página incluido) en móvil, tableta, portátil y proyector; los dígitos llenan el espacio que sobra y el historial hace scroll dentro de su panel
 - **Funciona sin internet (PWA)** — tras la primera visita se puede instalar y usar sin conexión; un aviso indica cuando no hay red
 - **Accesible** — configuración en un diálogo con teclado (Esc, foco atrapado), anuncios para lectores de pantalla, objetivos táctiles de 44 px, deshacer al borrar
 
@@ -95,6 +95,7 @@ src/
     ├── confettiEffects.js      # runWinnerCelebration(): confetti, globos y fuegos
     ├── random.js               # Azar con crypto, selección sin repetidos, IDs
     ├── historyExport.js        # Fecha del historial y exportación CSV
+    ├── resetApp.js             # Borrar caché y datos (storage, service worker, caché)
     └── sound.js                # Efectos de sonido con Web Audio
 e2e/                            # Tests Playwright (layout responsive, flujo, PWA)
 public/                         # Favicon e iconos de la PWA
