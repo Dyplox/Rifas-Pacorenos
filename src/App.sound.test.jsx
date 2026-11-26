@@ -9,9 +9,9 @@ vi.mock('./utils/sound', () => ({
     playHeartbeat: vi.fn(),
     startDrumRoll: vi.fn(),
     stopDrumRoll: vi.fn(),
-    playGo: vi.fn(),
     playReveal: vi.fn(),
     playWinnerSound: vi.fn(),
+    preloadSounds: vi.fn(),
 }));
 
 const advance = (ms) => act(() => { vi.advanceTimersByTime(ms); });
@@ -55,7 +55,6 @@ describe('countdown soundtrack', () => {
 
         // …keeps going through "¡MATRACA!" and the short shuffle…
         advance(SUSPENSE_MS);
-        expect(sound.playGo).toHaveBeenCalledOnce();
         advance(GO_MESSAGE_MS);
         expect(sound.stopDrumRoll).not.toHaveBeenCalled();
         expect(sound.playWinnerSound).not.toHaveBeenCalled();

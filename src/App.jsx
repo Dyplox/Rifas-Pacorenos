@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, memo } from 'react';
 import { RaffleProvider, useRaffle } from './context/RaffleContext';
 import { runWinnerCelebration } from './utils/confettiEffects';
-import { playReveal, playWinnerSound, stopDrumRoll } from './utils/sound';
+import { playReveal, playWinnerSound, preloadSounds, stopDrumRoll } from './utils/sound';
 import FullscreenButton from './components/FullscreenButton';
 import Layout from './components/Layout';
 import RaffleDisplay from './components/RaffleDisplay';
@@ -61,6 +61,11 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
     if (!isSoundEnabled || (!isRaffling && currentCount === null)) stopDrumRoll();
   }, [isSoundEnabled, isRaffling, currentCount]);
   useEffect(() => stopDrumRoll, []);
+
+  // Load the recorded sounds as soon as sound is on, so the first roll starts on time
+  useEffect(() => {
+    if (isSoundEnabled) preloadSounds();
+  }, [isSoundEnabled]);
 
   const handleRaffleClick = () => {
     if (isManualRevealEnabled) {

@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import SoundCredits from './SoundCredits';
 
 const Footer = memo(() => {
     const currentYear = new Date().getFullYear();
@@ -15,6 +16,7 @@ const Footer = memo(() => {
                 <p className="footer-author">
                     Sujeto a términos y condiciones - Desarrollado por <a href="https://www.linkedin.com/in/abelguar" target="_blank" rel="noopener noreferrer" className="author-name">@AbelGuAr</a>
                 </p>
+                <SoundCredits />
             </div>
         </footer>
     );

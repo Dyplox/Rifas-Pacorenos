@@ -69,7 +69,7 @@ Define internamente `RaffleContent` (memoizado, no exportado), que:
 
 - Calcula `isFinished = winner && revealedCount === digitCount`
 - Llama `runWinnerCelebration()` en un `useEffect` cuando `isFinished` pasa a `true`
-- Si el sonido está activo: `playWinnerSound()` al completarse el número (fin del redoble con platillo + aplausos) y `playReveal()` en cada dígito intermedio del modo manual; detiene el redoble si la rifa se cancela o se apaga el sonido
+- Si el sonido está activo: `playWinnerSound()` al completarse el número (golpe final grabado + aplausos) y `playReveal()` en cada dígito intermedio del modo manual; detiene el redoble si la rifa se cancela o se apaga el sonido
 - Decide qué acción ejecuta el botón según `isManualRevealEnabled` (`runDigitRaffleStep` o `runTraditionalRaffle`)
 - Atajo de teclado: Espacio o Enter ejecutan esa acción. Se desactiva con la configuración abierta (prop `shortcutsEnabled`) y se ignora si el foco está en un input, botón o enlace
 - Calcula el texto del botón: `Rifando...`, `Sin números disponibles`, `Rifar de Nuevo`, `Revelar Dígito`, `Revelar Siguiente` o `Iniciar Rifa`
@@ -169,7 +169,7 @@ Overlay a pantalla completa que muestra la cuenta regresiva.
 - **Pausa dramática** (`currentCount === 'suspense'`, 1,2 s): la pantalla queda casi a oscuras y una luz se "carga" (`.countdown-charge`); los lectores de pantalla oyen "Atentos…"
 - Luego `currentCount` vale `'¡MATRACA!'` durante 800 ms con la clase `countdown-ya` (verde, animación `countdown-ya-burst`)
 - El fondo se intensifica progresivamente (`viewport-progressive-intensity`) durante toda la secuencia
-- Si el sonido está activo: `playHeartbeat(tension)` en cada número (latido más agudo y fuerte al final), `startDrumRoll()` al empezar la pausa (el redoble sigue hasta que se revela el número) y `playGo()` (golpe de tom) en `'¡MATRACA!'`
+- Si el sonido está activo: `playHeartbeat(tension)` en cada número (latido más agudo y fuerte al final), `startDrumRoll()` al empezar la pausa (el redoble sigue hasta que se revela el número) ; `'¡MATRACA!'` no tiene sonido propio (el redoble sigue)
 
 ---
 
@@ -206,6 +206,14 @@ Props: `isOpen`, `title`, `message`, `confirmLabel`, `onConfirm`, `onCancel`.
 `src/components/UndoToast.jsx`
 
 Aviso fijo abajo (`role="status"`) con botones "Deshacer" y cerrar. Se descarta solo tras `UNDO_TIMEOUT_MS` (6 s); se vuelve a montar con `key` para reiniciar el tiempo.
+
+---
+
+## SoundCredits
+
+`src/components/SoundCredits.jsx`
+
+Botón "Créditos de sonido" del pie de página. Abre un `Modal` con el título, enlace a la fuente, licencia y cambios hechos a cada grabación (`SOUND_CREDITS` en `src/utils/soundCredits.js`).
 
 ---
 
@@ -284,17 +292,17 @@ const [value, setValue] = useLocalStorage('clave', valorDefault, { validate });
 
 `src/utils/sound.js`
 
-Sonidos sintetizados con la Web Audio API (sin archivos). El `AudioContext` se crea en el primer uso, que siempre ocurre tras un clic o tecla. Todo pasa por un **compresor/limitador común** (`getOutput`) para que los sonidos superpuestos no saturen. Los errores se registran con `console.warn` y no interrumpen la rifa.
+Mezcla grabaciones reales (reproducidas con **howler.js**) y tonos sintetizados con la Web Audio API.
 
 | Momento | Función | Sonido |
 |---|---|---|
-| Cada número del conteo | `playHeartbeat(tension)` | Latido "lub-dub"; más agudo, fuerte y rápido al final |
-| Pausa a oscuras | `startDrumRoll()` | Redoble de caja (ruido filtrado cortado en golpes rápidos) con crescendo; **sigue sonando** hasta que aparece el número |
-| "¡MATRACA!" | `playGo()` | Golpe de tom sobre el redoble |
-| Número completo | `playWinnerSound()` | Detiene el redoble con platillo + bombo y entran aplausos (~4 s) |
-| Dígito intermedio (manual) | `playReveal()` | Detiene el redoble con un "blip" corto |
+| Cada número del conteo | `playHeartbeat(tension)` | Latido "lub-dub" sintetizado; más agudo, fuerte y rápido al final |
+| Pausa a oscuras | `startDrumRoll()` | `public/sounds/drum-roll.mp3` en bucle; **sigue sonando** hasta que aparece el número |
+| "¡MATRACA!" | — | Sin sonido propio: el redoble sigue debajo |
+| Número completo | `playWinnerSound()` | Corta el redoble y suena `drum-hit.mp3` (golpe final); 150 ms después, `applause.mp3` |
+| Dígito intermedio (manual) | `playReveal()` | Corta el redoble con un "blip" sintetizado |
 
-`stopDrumRoll()` es seguro de llamar siempre; `App.jsx` lo llama si la rifa se cancela, si no queda nada en curso o si se desactiva el sonido, y el redoble tiene además un tope de 20 s. Cada sonido se construye con funciones `build*(ctx, destino, tiempo)` expuestas en `soundBuilders`, que permiten renderizarlo con un `OfflineAudioContext` para medirlo o escucharlo.
+`preloadSounds()` crea los reproductores al activar el sonido para que el primer redoble no espere la descarga. `stopDrumRoll()` es seguro de llamar siempre; `App.jsx` lo llama si la rifa se cancela, si no queda nada en curso o si se apaga el sonido. Las fuentes se muestran en **Créditos de sonido** (`SoundCredits.jsx`, datos en `src/utils/soundCredits.js`).
 
 ---
 

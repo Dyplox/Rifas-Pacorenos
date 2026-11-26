@@ -153,6 +153,25 @@ Para listeners registrados en efectos (atajos de teclado, temporizadores) usar `
 
 Usar `useLocalStorage(clave, default, { validate })` en `RaffleContext.jsx`. El tipo del default decide cómo se lee el valor guardado; si el valor está corrupto o `validate` devuelve `false`, se usa el default. Exponer el valor y su setter en el `value` del contexto y agregar el control en `SettingsPanel.jsx`.
 
+## Sonidos
+
+Las grabaciones están en `public/sounds/` y la PWA las precachea (`mp3` en `globPatterns` de `vite.config.js`). Origen:
+
+| Archivo | Fuente | Recorte | Nivel |
+|---|---|---|---|
+| `drum-roll.mp3` | [“Drop: Drumroll”](https://www.youtube.com/watch?v=uxk76TR-_8Y) (Creative Commons) | 1,45 s → 4,05 s (tramo más intenso del redoble), fundidos de 20/30 ms para el bucle | −8 dB (pico −7,7 dBFS) |
+| `drum-hit.mp3` | mismo audio | 4,515 s → 7,05 s (golpe final en 4,52 s + resonancia), fundido de salida | pico −2 dBFS |
+| `applause.mp3` | [“Aplausos - Efecto De Sonidos”](https://www.youtube.com/watch?v=U8dfTeL7t0o) (Creative Commons) | 0,45 s → 7,8 s, fundido de salida desde 5,85 s | pico −2,5 dBFS |
+
+Todas a MP3 128 kbps, 44,1 kHz, estéreo. Ejemplo de recorte (con `ffmpeg`; importante `asetpts` para que los fundidos se midan desde el inicio del recorte):
+
+```bash
+ffmpeg -i fuente.mp3 -af "atrim=start=4.515:end=7.05,asetpts=PTS-STARTPTS,afade=t=in:d=0.004,afade=t=out:st=2.3:d=0.235,volume=-3.99dB" \
+  -ar 44100 -ac 2 -c:a libmp3lame -b:a 128k public/sounds/drum-hit.mp3
+```
+
+Las fuentes vienen saturadas (picos por encima de 0 dBFS): medir el pico real con `-af astats` antes de fijar la ganancia. Se comprobó la mezcla completa (redoble → golpe → aplausos 150 ms después) renderizándola con un `OfflineAudioContext`: pico 0,80, sin saturación, y el golpe 7,8 dB por encima del redoble.
+
 ## Linting
 
 El proyecto usa ESLint 9 (flat config en `eslint.config.js`) con `@eslint/js` recommended, `eslint-plugin-react-hooks` y `eslint-plugin-react-refresh`. `no-unused-vars` ignora variables que empiezan por mayúscula o `_`. Para corregir automáticamente:

@@ -1,6 +1,6 @@
 import { memo, useEffect } from 'react';
 import { useRaffle, GO_MESSAGE, SUSPENSE, SUSPENSE_MS } from '../context/RaffleContext';
-import { playGo, playHeartbeat, startDrumRoll } from '../utils/sound';
+import { playHeartbeat, startDrumRoll } from '../utils/sound';
 import { countdownTension } from '../utils/countdown';
 
 const CountdownOverlay = memo(() => {
@@ -13,9 +13,10 @@ const CountdownOverlay = memo(() => {
 
     useEffect(() => {
         if (!isSoundEnabled || currentCount === null) return;
-        if (currentCount === GO_MESSAGE) playGo();
+        // "¡MATRACA!" has no sound of its own: the recorded roll keeps building under it
+        if (currentCount === GO_MESSAGE) return;
         // The roll keeps going until the number is revealed (stopped in App.jsx)
-        else if (currentCount === SUSPENSE) startDrumRoll();
+        if (currentCount === SUSPENSE) startDrumRoll();
         else playHeartbeat(countdownTension(currentCount, countdownDuration));
     }, [currentCount, countdownDuration, isSoundEnabled]);
 

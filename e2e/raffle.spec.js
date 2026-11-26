@@ -110,3 +110,27 @@ test('countdown builds suspense: grows, turns red, trembles, pauses, then "¡MAT
     expect(Date.now() - closedAt, 'ms from "¡MATRACA!" closing to the number').toBeLessThan(700);
     await expect(page.getByRole('heading', { name: '¡Tenemos un Ganador!' })).toBeVisible();
 });
+
+test('with sound on, the recorded clips load and play without errors', async ({ page }) => {
+    const errors = [];
+    page.on('console', (msg) => { if (msg.type() === 'error' || msg.type() === 'warning') errors.push(msg.text()); });
+    page.on('pageerror', (err) => errors.push(err.message));
+    const clips = new Map();
+    page.on('response', (res) => {
+        const match = res.url().match(/sounds\/([\w-]+\.mp3)/);
+        if (match) clips.set(match[1], { status: res.status(), type: res.headers()['content-type'] });
+    });
+
+    await seedSettings(page, { raffle_isSoundEnabled: 'true', raffle_isCountdownEnabled: 'true', raffle_countdownDuration: '3' });
+    await page.goto('./');
+    await raffleButton(page).click();
+    await expect(page.getByRole('heading', { name: '¡Tenemos un Ganador!' })).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(500);
+
+    for (const name of ['drum-roll.mp3', 'drum-hit.mp3', 'applause.mp3']) {
+        expect(clips.get(name), `${name} requested`).toBeTruthy();
+        expect([200, 206, 304]).toContain(clips.get(name).status);
+        expect(clips.get(name).type).toMatch(/audio\/mpeg/);
+    }
+    expect(errors.filter(e => /sound|audio|howl/i.test(e))).toEqual([]);
+});
