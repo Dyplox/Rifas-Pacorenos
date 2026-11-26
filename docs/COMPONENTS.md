@@ -41,7 +41,7 @@ Proveedor de estado global (`RaffleProvider`). Exporta el hook `useRaffle()` par
 | `setIsNoRepeatEnabled()` | `function` | Activa/desactiva no repetir |
 | `setIsSoundEnabled()` | `function` | Activa/desactiva sonido |
 
-También exporta constantes: límites (`MIN_DIGITS`, `MAX_DIGITS`, `MIN_COUNTDOWN`, `MAX_COUNTDOWN`), tiempos (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `GO_MESSAGE_MS`) y `GO_MESSAGE` (`'¡MATRACA!'`).
+También exporta constantes: límites (`MIN_DIGITS`, `MAX_DIGITS`, `MIN_COUNTDOWN`, `MAX_COUNTDOWN`), tiempos (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `POST_COUNTDOWN_SHUFFLE_MS`, `GO_MESSAGE_MS`, `SUSPENSE_MS`) y `GO_MESSAGE` (`'¡MATRACA!'`).
 
 ### Entrada del historial
 

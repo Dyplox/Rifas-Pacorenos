@@ -38,7 +38,7 @@ El estado global se maneja con **Context API** (`RaffleContext.jsx`). No se usa 
 | Variable | Tipo | Descripción |
 |----------|------|-------------|
 | `winner` | `string \| null` | Número ganador actual con ceros a la izquierda |
-| `isRaffling` | `boolean` | `true` durante la animación de barajado (800 ms tradicional, 500 ms por paso manual) |
+| `isRaffling` | `boolean` | `true` durante la animación de barajado (sin countdown: 800 ms tradicional, 500 ms por paso manual; justo después del countdown: 300 ms) |
 | `revealedCount` | `number` | Dígitos revelados |
 | `currentCount` | `number \| '¡MATRACA!' \| null` | Valor del countdown; distinto de `null` mientras el overlay está activo |
 
@@ -74,13 +74,15 @@ Todos los `setTimeout` de la rifa (barajado, pasos manuales, mensaje `'¡MATRACA
 
 ```
 runWithCountdown(callback)
-  ├─ Si countdown desactivado → callback()
+  ├─ Si countdown desactivado → callback(false)
   └─ Si activo → currentCount = countdownDuration
        └─ setInterval(1s): currentCount--
             └─ al llegar a 0 → currentCount = 'suspense'   (pausa dramática, SUSPENSE_MS = 1200)
                  └─ setTimeout(1200ms) → currentCount = '¡MATRACA!'
-                      └─ setTimeout(800ms) → currentCount = null, callback()
+                      └─ setTimeout(800ms) → currentCount = null, callback(true)
 ```
+
+El callback recibe `afterCountdown`. Tras el countdown el suspenso ya está construido, así que el barajado dura solo `POST_COUNTDOWN_SHUFFLE_MS` (300 ms) y el número aparece casi al cerrarse "¡MATRACA!". Sin countdown se mantiene el barajado completo (800 ms / 500 ms), que es el único suspenso.
 
 ### Rifa tradicional
 
@@ -89,7 +91,7 @@ click "Iniciar Rifa"
   └─ runTraditionalRaffle()          ← ignora el click si isRaffling, hay countdown o no quedan números
        └─ runWithCountdown(executeRaffle)
             └─ executeRaffle(): isRaffling = true, winner = null
-                 └─ setTimeout(800ms)
+                 └─ setTimeout(800ms, o 300ms si viene del countdown)
                       └─ winner = generateWinner(), revealedCount = digitCount,
                          agrega a history
                            └─ App.jsx detecta isFinished → runWinnerCelebration()
@@ -101,10 +103,10 @@ click "Iniciar Rifa"
 click "Revelar Dígito" / "Revelar Siguiente"
   └─ runDigitRaffleStep()
        ├─ Si no hay winner o ya está completo (y quedan números):
-       │    runWithCountdown → setTimeout(500ms) → generateWinner(), revealedCount = 1
+       │    runWithCountdown → setTimeout(500ms | 300ms tras countdown) → generateWinner(), revealedCount = 1
        │    (con 1 solo dígito, se agrega al historial aquí)
        └─ Si faltan dígitos:
-            runWithCountdown → setTimeout(500ms) → revealedCount++
+            runWithCountdown → setTimeout(500ms | 300ms tras countdown) → revealedCount++
                  └─ Si era el último → agrega a history (+ celebración en App.jsx)
 ```
 

@@ -10,8 +10,11 @@ export const MIN_COUNTDOWN = 3;
 export const MAX_COUNTDOWN = 10;
 
 // Animation timings (ms)
+// Shuffle before revealing. Without countdown it carries the suspense (longer);
+// right after the countdown the suspense is already built, so the number shows almost at once.
 export const TRADITIONAL_SHUFFLE_MS = 800;
 export const DIGIT_STEP_MS = 500;
+export const POST_COUNTDOWN_SHUFFLE_MS = 300;
 export const GO_MESSAGE_MS = 800;
 export const GO_MESSAGE = '¡MATRACA!';
 // Dramatic pause between the last number and GO_MESSAGE (screen goes dark, a light "charges up")
@@ -120,7 +123,7 @@ export const RaffleProvider = ({ children }) => {
   /**
    * Executes the actual raffle after any countdown
    */
-  const executeRaffle = useCallback(() => {
+  const executeRaffle = useCallback((afterCountdown = false) => {
     setIsRaffling(true);
     setWinner(null);
     setRevealedCount(0);
@@ -132,11 +135,12 @@ export const RaffleProvider = ({ children }) => {
       setWinner(newWinner);
       setRevealedCount(digitCount);
       addToHistory(newWinner);
-    }, TRADITIONAL_SHUFFLE_MS);
+    }, afterCountdown ? POST_COUNTDOWN_SHUFFLE_MS : TRADITIONAL_SHUFFLE_MS);
   }, [digitCount, generateWinner, addToHistory, schedule]);
 
   /**
-   * Helper to run a callback with or without countdown
+   * Helper to run a callback with or without countdown.
+   * The callback receives `afterCountdown` (true when a countdown just finished).
    */
   const runWithCountdown = useCallback((callback) => {
     cancelPendingTimers();
@@ -157,13 +161,13 @@ export const RaffleProvider = ({ children }) => {
             setCurrentCount(GO_MESSAGE);
             schedule(() => {
               setCurrentCount(null);
-              callback();
+              callback(true);
             }, GO_MESSAGE_MS);
           }, SUSPENSE_MS);
         }
       }, 1000);
     } else {
-      callback();
+      callback(false);
     }
   }, [isCountdownEnabled, countdownDuration, cancelPendingTimers, schedule]);
 
@@ -185,7 +189,7 @@ export const RaffleProvider = ({ children }) => {
     if (!winner || revealedCount >= digitCount) {
       if (availableCount === 0) return;
 
-      const startNewDigitRaffle = () => {
+      const startNewDigitRaffle = (afterCountdown) => {
         setIsRaffling(true);
         setRevealedCount(0);
         setWinner(null);
@@ -197,14 +201,14 @@ export const RaffleProvider = ({ children }) => {
           setWinner(newWinner);
           setRevealedCount(1);
           if (digitCount === 1) addToHistory(newWinner);
-        }, DIGIT_STEP_MS);
+        }, afterCountdown ? POST_COUNTDOWN_SHUFFLE_MS : DIGIT_STEP_MS);
       };
 
       runWithCountdown(startNewDigitRaffle);
 
     } else {
       // Reveal the next digit
-      const revealNextDigit = () => {
+      const revealNextDigit = (afterCountdown) => {
         setIsRaffling(true);
 
         schedule(() => {
@@ -216,7 +220,7 @@ export const RaffleProvider = ({ children }) => {
             addToHistory(winner);
           }
           setIsRaffling(false);
-        }, DIGIT_STEP_MS);
+        }, afterCountdown ? POST_COUNTDOWN_SHUFFLE_MS : DIGIT_STEP_MS);
       };
 
       runWithCountdown(revealNextDigit);

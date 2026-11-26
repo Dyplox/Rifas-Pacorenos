@@ -102,5 +102,11 @@ test('countdown builds suspense: grows, turns red, trembles, pauses, then "¡MAT
     await expect(popup).toHaveCount(0);
 
     await expect(popup).toHaveText('¡MATRACA!', { timeout: 3000 });
-    await expect(page.getByRole('heading', { name: '¡Tenemos un Ganador!' })).toBeVisible({ timeout: 3000 });
+
+    // Once "¡MATRACA!" closes, the number shows almost at once (short shuffle, 300ms)
+    await expect(page.locator('.countdown-overlay')).toHaveCount(0, { timeout: 3000 });
+    const closedAt = Date.now();
+    await expect(page.locator('.digit-container.winner')).toBeVisible({ timeout: 3000 });
+    expect(Date.now() - closedAt, 'ms from "¡MATRACA!" closing to the number').toBeLessThan(700);
+    await expect(page.getByRole('heading', { name: '¡Tenemos un Ganador!' })).toBeVisible();
 });

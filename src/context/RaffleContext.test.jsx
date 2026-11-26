@@ -9,6 +9,7 @@ import {
     GO_MESSAGE_MS,
     SUSPENSE,
     SUSPENSE_MS,
+    POST_COUNTDOWN_SHUFFLE_MS,
 } from './RaffleContext';
 
 const setup = (settings = {}) => {
@@ -33,7 +34,10 @@ describe('traditional raffle', () => {
         act(() => raffle.current.runTraditionalRaffle());
         expect(raffle.current.isRaffling).toBe(true);
 
-        advance(TRADITIONAL_SHUFFLE_MS);
+        // Without countdown the shuffle carries the suspense: full duration
+        advance(TRADITIONAL_SHUFFLE_MS - 1);
+        expect(raffle.current.winner).toBeNull();
+        advance(1);
         expect(raffle.current.isRaffling).toBe(false);
         expect(raffle.current.winner).toMatch(/^\d{3}$/);
         expect(raffle.current.revealedCount).toBe(3);
@@ -61,7 +65,9 @@ describe('traditional raffle', () => {
         advance(GO_MESSAGE_MS);
         expect(raffle.current.currentCount).toBeNull();
         expect(raffle.current.isRaffling).toBe(true);
-        advance(TRADITIONAL_SHUFFLE_MS);
+        // Right after "¡MATRACA!" the number shows almost at once
+        advance(POST_COUNTDOWN_SHUFFLE_MS);
+        expect(raffle.current.winner).toMatch(/^\d{3}$/);
         expect(raffle.current.history).toHaveLength(1);
     });
 });
@@ -77,6 +83,25 @@ describe('manual raffle', () => {
 
         act(() => raffle.current.runDigitRaffleStep());
         advance(DIGIT_STEP_MS);
+        expect(raffle.current.revealedCount).toBe(2);
+        expect(raffle.current.history).toHaveLength(1);
+    });
+
+    it('uses the short reveal for each step that follows a countdown', () => {
+        const raffle = setup({
+            raffle_isManualRevealEnabled: 'true',
+            raffle_digitCount: '2',
+            raffle_isCountdownEnabled: 'true',
+            raffle_countdownDuration: '3',
+        });
+        const countdownMs = 3000 + SUSPENSE_MS + GO_MESSAGE_MS;
+
+        act(() => raffle.current.runDigitRaffleStep());
+        advance(countdownMs + POST_COUNTDOWN_SHUFFLE_MS);
+        expect(raffle.current.revealedCount).toBe(1);
+
+        act(() => raffle.current.runDigitRaffleStep());
+        advance(countdownMs + POST_COUNTDOWN_SHUFFLE_MS);
         expect(raffle.current.revealedCount).toBe(2);
         expect(raffle.current.history).toHaveLength(1);
     });
