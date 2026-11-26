@@ -1,5 +1,7 @@
 import { memo, useState, useEffect, useCallback } from 'react';
 import { useRaffle, MIN_DIGITS, MAX_DIGITS, MIN_COUNTDOWN, MAX_COUNTDOWN } from '../context/RaffleContext';
+import Modal from './Modal';
+import ConfirmDialog from './ConfirmDialog';
 
 const SettingsPanel = memo(({ isOpen, onClose }) => {
     const {
@@ -10,11 +12,12 @@ const SettingsPanel = memo(({ isOpen, onClose }) => {
         isCountdownEnabled, setIsCountdownEnabled,
         isNoRepeatEnabled, setIsNoRepeatEnabled,
         isSoundEnabled, setIsSoundEnabled,
-        clearHistory
+        history, clearHistory
     } = useRaffle();
 
     const [inputValue, setInputValue] = useState(digitCount);
     const [countdownInputValue, setCountdownInputValue] = useState(countdownDuration);
+    const [isConfirmingClear, setIsConfirmingClear] = useState(false);
 
     useEffect(() => {
         setInputValue(digitCount);
@@ -45,151 +48,135 @@ const SettingsPanel = memo(({ isOpen, onClose }) => {
         }
     }, [setCountdownDuration]);
 
-    const handleManualRevealChange = useCallback((e) => {
-        setIsManualRevealEnabled(e.target.checked);
-    }, [setIsManualRevealEnabled]);
-
-    const handleCountdownEnabledChange = useCallback((e) => {
-        setIsCountdownEnabled(e.target.checked);
-    }, [setIsCountdownEnabled]);
-
-    const handleNoRepeatChange = useCallback((e) => {
-        setIsNoRepeatEnabled(e.target.checked);
-    }, [setIsNoRepeatEnabled]);
-
-    const handleSoundChange = useCallback((e) => {
-        setIsSoundEnabled(e.target.checked);
-    }, [setIsSoundEnabled]);
-
-    const handleClearHistory = useCallback(() => {
-        if (window.confirm('¿Estás seguro de que deseas borrar todo el historial?')) {
-            clearHistory();
-        }
+    const handleConfirmClear = useCallback(() => {
+        clearHistory();
+        setIsConfirmingClear(false);
     }, [clearHistory]);
 
-    if (!isOpen) return null;
+    const handleCancelClear = useCallback(() => setIsConfirmingClear(false), []);
 
     return (
-        <div className="settings-overlay" onClick={onClose}>
-            <div className="card settings-content" onClick={(e) => e.stopPropagation()}>
-                <h2 className="settings-title">Configuración</h2>
-
+        <>
+            <Modal isOpen={isOpen && !isConfirmingClear} onClose={onClose} title="Configuración" className="settings-content">
                 <div className="settings-field">
-                    <label className="field-label">
+                    <label className="field-label" htmlFor="setting-digits">
                         Cantidad de Dígitos
                     </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="field-row">
                         <input
+                            id="setting-digits"
                             type="number"
+                            inputMode="numeric"
                             value={inputValue}
                             onChange={handleChange}
                             min={MIN_DIGITS}
                             max={MAX_DIGITS}
                             disabled={isRaffling}
+                            aria-describedby="setting-digits-hint"
                         />
-                        <span className="field-hint">
+                        <span id="setting-digits-hint" className="field-hint">
                             (Min {MIN_DIGITS}, Max {MAX_DIGITS})
                         </span>
                     </div>
-
-                    <div className="settings-field" style={{ marginTop: '2rem' }}>
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={isCountdownEnabled}
-                                onChange={handleCountdownEnabledChange}
-                                disabled={isRaffling}
-                            />
-                            Activar Conteo Regresivo
-                        </label>
-
-                        {isCountdownEnabled && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem', paddingLeft: '1.5rem' }}>
-                                <label className="field-label" style={{ margin: 0, minWidth: 'auto' }}>
-                                    Segundos:
-                                </label>
-                                <input
-                                    type="number"
-                                    value={countdownInputValue}
-                                    onChange={handleCountdownChange}
-                                    min={MIN_COUNTDOWN}
-                                    max={MAX_COUNTDOWN}
-                                    disabled={isRaffling}
-                                    style={{ width: '70px' }}
-                                />
-                                <span className="field-hint">
-                                    (Min {MIN_COUNTDOWN}, Max {MAX_COUNTDOWN})
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div style={{ marginTop: '2rem' }}>
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={isManualRevealEnabled}
-                                onChange={handleManualRevealChange}
-                                disabled={isRaffling}
-                            />
-                            Revelación por Dígito (Manual)
-                        </label>
-                    </div>
-
-                    <div style={{ marginTop: '2rem' }}>
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={isNoRepeatEnabled}
-                                onChange={handleNoRepeatChange}
-                                disabled={isRaffling}
-                            />
-                            No repetir números ya sorteados
-                        </label>
-                    </div>
-
-                    <div style={{ marginTop: '2rem' }}>
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={isSoundEnabled}
-                                onChange={handleSoundChange}
-                            />
-                            Activar sonido
-                        </label>
-                    </div>
-
-                    <div style={{ marginTop: '2.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
-                        <button
-                            className="btn-secondary"
-                            style={{
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                color: '#f87171',
-                                border: '1px solid rgba(239, 68, 68, 0.2)',
-                                width: '100%',
-                                padding: '0.8rem',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onClick={handleClearHistory}
-                        >
-                            🗑️ Borrar Historial de Sorteos
-                        </button>
-                    </div>
                 </div>
 
-                <div className="settings-actions">
+                <div className="settings-field">
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={isCountdownEnabled}
+                            onChange={(e) => setIsCountdownEnabled(e.target.checked)}
+                            disabled={isRaffling}
+                        />
+                        Activar Conteo Regresivo
+                    </label>
+
+                    {isCountdownEnabled && (
+                        <div className="field-row field-row-nested">
+                            <label className="field-label field-label-inline" htmlFor="setting-countdown">
+                                Segundos:
+                            </label>
+                            <input
+                                id="setting-countdown"
+                                type="number"
+                                inputMode="numeric"
+                                className="input-small"
+                                value={countdownInputValue}
+                                onChange={handleCountdownChange}
+                                min={MIN_COUNTDOWN}
+                                max={MAX_COUNTDOWN}
+                                disabled={isRaffling}
+                                aria-describedby="setting-countdown-hint"
+                            />
+                            <span id="setting-countdown-hint" className="field-hint">
+                                (Min {MIN_COUNTDOWN}, Max {MAX_COUNTDOWN})
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="settings-field">
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={isManualRevealEnabled}
+                            onChange={(e) => setIsManualRevealEnabled(e.target.checked)}
+                            disabled={isRaffling}
+                        />
+                        Revelación por Dígito (Manual)
+                    </label>
+                </div>
+
+                <div className="settings-field">
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={isNoRepeatEnabled}
+                            onChange={(e) => setIsNoRepeatEnabled(e.target.checked)}
+                            disabled={isRaffling}
+                        />
+                        No repetir números ya sorteados
+                    </label>
+                </div>
+
+                <div className="settings-field">
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={isSoundEnabled}
+                            onChange={(e) => setIsSoundEnabled(e.target.checked)}
+                        />
+                        Activar sonido
+                    </label>
+                </div>
+
+                <div className="settings-danger-zone">
                     <button
-                        className="btn-primary"
-                        style={{ padding: '0.5em 1.5em', fontSize: '1rem' }}
-                        onClick={onClose}
+                        type="button"
+                        className="btn-danger btn-block"
+                        onClick={() => setIsConfirmingClear(true)}
+                        disabled={history.length === 0}
                     >
+                        🗑️ Borrar Historial de Sorteos
+                    </button>
+                </div>
+
+                <div className="modal-actions">
+                    <button type="button" className="btn-primary btn-compact" onClick={onClose}>
                         Guardar
                     </button>
                 </div>
-            </div>
-        </div>
+            </Modal>
+
+            <ConfirmDialog
+                isOpen={isOpen && isConfirmingClear}
+                title="Borrar historial"
+                message={`Se borrarán los ${history.length} resultados del historial. Esta acción no se puede deshacer.`}
+                confirmLabel="Borrar todo"
+                onConfirm={handleConfirmClear}
+                onCancel={handleCancelClear}
+            />
+        </>
     );
 });
 

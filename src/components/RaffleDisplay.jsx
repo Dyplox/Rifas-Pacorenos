@@ -42,7 +42,7 @@ const RaffleDisplay = memo(() => {
             }
             // Otherwise (before raffle or unrevealed), show mask
             else {
-                content = '*';
+                content = <span className="digit-mask">*</span>;
             }
 
             return (
@@ -50,6 +50,7 @@ const RaffleDisplay = memo(() => {
                     key={idx}
                     className="digit-box"
                     style={{ animationDelay: `${idx * 0.1}s` }}
+                    aria-hidden="true"
                 >
                     {content}
                 </div>
@@ -58,8 +59,22 @@ const RaffleDisplay = memo(() => {
         [digitCount, winner, revealedCount, isRaffling, shuffleDigits]
     );
 
+    // What screen readers hear instead of the individual boxes
+    const accessibleLabel = useMemo(() => {
+        if (isRaffling) return 'Sorteando…';
+        if (!winner || revealedCount === 0) return `Número oculto de ${digitCount} dígitos`;
+        const revealed = winner.slice(0, revealedCount).split('').join(' ');
+        if (revealedCount === digitCount) return `Número ganador: ${revealed}`;
+        return `Dígitos revelados: ${revealed}. Faltan ${digitCount - revealedCount}`;
+    }, [isRaffling, winner, revealedCount, digitCount]);
+
     return (
-        <div className={containerClassName}>
+        <div
+            className={containerClassName}
+            style={{ '--digits': digitCount }}
+            role="img"
+            aria-label={accessibleLabel}
+        >
             {digitBoxes}
         </div>
     );

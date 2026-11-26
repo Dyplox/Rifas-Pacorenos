@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { RaffleProvider, useRaffle } from './context/RaffleContext';
 import { runWinnerCelebration } from './utils/confettiEffects';
 import { playFanfare, playReveal } from './utils/sound';
@@ -9,6 +9,8 @@ import RaffleHistory from './components/RaffleHistory';
 import SettingsPanel from './components/SettingsPanel';
 import CountdownOverlay from './components/CountdownOverlay';
 import Footer from './components/Footer';
+import useOnlineStatus from './hooks/useOnlineStatus';
+import useLatestCallback from './hooks/useLatestCallback';
 import logoPacoreños from './assets/images/pacomede.jpg';
 
 // Elements whose own Space/Enter behavior must not trigger the raffle
@@ -42,7 +44,7 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
   }, [isFinished]);
 
   // Sounds: fanfare on winner, blip on each intermediate manual reveal
-  const playRevealSound = useEffectEvent((isLastDigit) => {
+  const playRevealSound = useLatestCallback((isLastDigit) => {
     if (!isSoundEnabled) return;
     if (isLastDigit) playFanfare();
     else playReveal();
@@ -50,7 +52,7 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
   useEffect(() => {
     if (!winner || revealedCount === 0) return;
     playRevealSound(revealedCount === digitCount);
-  }, [winner, revealedCount, digitCount]);
+  }, [winner, revealedCount, digitCount, playRevealSound]);
 
   const handleRaffleClick = () => {
     if (isManualRevealEnabled) {
@@ -61,7 +63,7 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
   };
 
   // Keyboard shortcut: Space / Enter starts the raffle or reveals the next digit
-  const onShortcut = useEffectEvent(() => {
+  const onShortcut = useLatestCallback(() => {
     if (!isBusy && !isExhausted) handleRaffleClick();
   });
   useEffect(() => {
@@ -77,7 +79,7 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcutsEnabled]);
+  }, [shortcutsEnabled, onShortcut]);
 
   // Memoize button text to avoid recalculating
   const buttonText = useMemo(() => {
@@ -92,20 +94,18 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
 
   return (
     <div className="cards-stack">
-      <div className="card card-raffle">
+      <section className="card card-raffle" aria-label="Sorteo">
         <RaffleDisplay />
 
-        <div style={{ marginTop: '2rem' }}>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <button
-              className="btn-primary"
-              onClick={handleRaffleClick}
-              disabled={isBusy || isExhausted}
-              aria-label={buttonText}
-            >
-              {buttonText}
-            </button>
-          </div>
+        <div className="raffle-controls">
+          <button
+            type="button"
+            className="btn-primary btn-raffle"
+            onClick={handleRaffleClick}
+            disabled={isBusy || isExhausted}
+          >
+            {buttonText}
+          </button>
           <p className="raffle-hint">
             {isNoRepeatEnabled && (
               <span>
@@ -115,28 +115,39 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
             <span className="shortcut-hint">Espacio o Enter para sortear</span>
           </p>
         </div>
-      </div>
+      </section>
 
-      <div className="card card-result">
+      {/* Live region: screen readers announce the winner when it appears */}
+      <section className="card card-result" aria-live="polite" aria-atomic="true">
         <h2 className={`card-title ${isFinished ? 'has-winner' : ''}`}>
           {isFinished ? '¡Tenemos un Ganador!' : 'Próximo Ganador'}
         </h2>
 
         {isFinished && (
-          <div className="winner-announcement" style={{ marginTop: 0, animation: 'slideIn 0.5s ease' }}>
-            <div className="winner-result-box" style={{ justifyContent: 'center' }}>
-              <span style={{ fontSize: '1.5rem' }}>🎉</span>
+          <div className="winner-announcement">
+            <div className="winner-result-box">
+              <span className="winner-emoji" aria-hidden="true">🎉</span>
               <span className="winner-text">¡Felicidades al número {winner}!</span>
-              <span style={{ fontSize: '1.5rem' }}>🎉</span>
+              <span className="winner-emoji" aria-hidden="true">🎉</span>
             </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 });
 
 RaffleContent.displayName = 'RaffleContent';
+
+const OfflineBadge = () => {
+  const isOnline = useOnlineStatus();
+  if (isOnline) return null;
+  return (
+    <span className="offline-badge" role="status" title="La app sigue funcionando sin conexión">
+      Sin conexión
+    </span>
+  );
+};
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -159,13 +170,17 @@ function App() {
               </div>
 
               <div className="header-actions">
+                <OfflineBadge />
                 <FullscreenButton />
                 <button
+                  type="button"
                   onClick={handleOpenSettings}
                   className="btn-settings"
                   aria-label="Abrir configuración"
+                  aria-haspopup="dialog"
                 >
-                  ⚙️ Configurar
+                  <span aria-hidden="true">⚙️</span>
+                  <span className="btn-label">Configurar</span>
                 </button>
               </div>
             </header>

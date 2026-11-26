@@ -234,6 +234,18 @@ export const RaffleProvider = ({ children }) => {
     setHistory(prev => prev.filter(entry => entry.id !== id));
   }, [setHistory]);
 
+  /**
+   * Puts back a deleted entry at its original position (undo)
+   */
+  const restoreHistoryEntry = useCallback((entry, index) => {
+    setHistory(prev => {
+      if (prev.some(item => item.id === entry.id)) return prev;
+      const next = [...prev];
+      next.splice(Math.min(index, next.length), 0, entry);
+      return next;
+    });
+  }, [setHistory]);
+
   const updateWinnerName = useCallback((id, name) => {
     setHistory(prev => prev.map(entry =>
       entry.id === id ? { ...entry, winnerName: name } : entry
@@ -266,6 +278,7 @@ export const RaffleProvider = ({ children }) => {
     totalNumbers,
     clearHistory,
     deleteHistoryEntry,
+    restoreHistoryEntry,
     updateWinnerName
   }), [
     digitCount, setDigitCount,
@@ -279,7 +292,7 @@ export const RaffleProvider = ({ children }) => {
     isNoRepeatEnabled, setIsNoRepeatEnabled,
     isSoundEnabled, setIsSoundEnabled,
     availableCount, totalNumbers,
-    clearHistory, deleteHistoryEntry, updateWinnerName
+    clearHistory, deleteHistoryEntry, restoreHistoryEntry, updateWinnerName
   ]);
 
   return (
