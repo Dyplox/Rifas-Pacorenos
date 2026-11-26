@@ -4,7 +4,7 @@ Aplicación web para realizar rifas digitales en vivo, diseñada para la comunid
 
 ## Demo
 
-Disponible en GitHub Pages: `https://abelgutierrezarias.github.io/Rifas-Pacorenos/`
+Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 
 ## Tecnologías
 
@@ -21,7 +21,7 @@ Disponible en GitHub Pages: `https://abelgutierrezarias.github.io/Rifas-Pacoreno
 
 - **Modo tradicional** — todos los dígitos se revelan de golpe con animación de barajado
 - **Modo manual** — revelación dígito a dígito para mayor suspenso
-- **Cuenta regresiva** configurable (3-10 segundos) con overlay a pantalla completa
+- **Cuenta regresiva** configurable (3-10 segundos, activada por defecto) con overlay a pantalla completa
 - **Historial persistente** de ganadores con nombres editables y timestamps
 - **Celebración** con confetti, globos y fuegos artificiales al anunciar el ganador
 - **Configuración persistente** en `localStorage`
@@ -67,7 +67,7 @@ src/
 ├── hooks/
 │   └── useLocalStorage.js      # Hook de persistencia en localStorage
 └── utils/
-    └── confettiEffects.js      # Efectos de celebración (confetti + fuegos)
+    └── confettiEffects.js      # runWinnerCelebration(): confetti, globos y fuegos
 ```
 
 ## Documentación adicional
@@ -83,8 +83,10 @@ src/
 |-------|-------|-----|
 | Dorado principal | `#fbbf24` | Acento principal, botones, texto destacado |
 | Dorado oscuro | `#b45309` | Gradientes y sombras |
-| Verde Pacoreños | `#58892B` | Ganador destacado y "¡MATRACA!" |
+| Verde Pacoreños | `#58892B` | Último ganador del historial, "¡MATRACA!" y confetti |
 | Amarillo Medellín | `#F6BB31` | Confetti de celebración |
+
+No hay suite de tests; `pnpm lint` y `pnpm build` son la verificación disponible.
 | Fondo oscuro | `#0f0f13` | Fondo general de la app |
 
 ## Licencia
