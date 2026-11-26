@@ -26,7 +26,7 @@ SCREENSHOTS=1 pnpm test:e2e screenshots         # review captures in e2e-screens
 
 First e2e run needs `pnpm exec playwright install chromium`.
 
-Tests live next to the code (`*.test.js[x]`); config is the `test` block in `vite.config.js`, setup in `src/test/setup.js` (clears DOM + localStorage). Context tests use fake timers with the exported timing constants (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `GO_MESSAGE_MS`). `App.test.jsx` mocks `canvas-confetti` (jsdom has no canvas).
+Tests live next to the code (`*.test.js[x]`); config is the `test` block in `vite.config.js`, setup in `src/test/setup.js` (clears DOM + localStorage). Context tests use fake timers with the exported timing constants (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `POST_COUNTDOWN_SHUFFLE_MS`, `GO_MESSAGE_MS`, `SUSPENSE_MS`). `App.test.jsx` mocks `canvas-confetti` (jsdom has no canvas).
 
 E2E (`e2e/`, `playwright.config.js`) runs against `pnpm build && pnpm preview` on port 4173, so the service worker is real. `layout.spec.js` asserts per viewport: no horizontal or page scroll (footer visible), digits filling their space, raffle button and winner message on screen, ≥ 44px touch targets, countdown/“¡MATRACA!” within the viewport. Functional (`raffle.spec.js`) and PWA (`pwa.spec.js`) specs run only on the `laptop` project. Use `seedSettings()` / `waitForAnimations()` from `e2e/helpers.js`; measure after entrance animations or the 20px slide-in skews boxes.
 
@@ -35,9 +35,9 @@ CI: `.github/workflows/ci.yml` runs `verify` (lint + test + build) and `e2e` (Pl
 ## Architecture
 
 - **All raffle logic lives in `src/context/RaffleContext.jsx`** (`RaffleProvider` + `useRaffle()` hook). Components are thin views over this context. Two raffle modes:
-  - `runTraditionalRaffle` → `runWithCountdown(executeRaffle)`: shuffles for 800 ms, then sets the full winner and appends to history.
+  - `runTraditionalRaffle` → `runWithCountdown(executeRaffle)`: shuffles for 800 ms (only 300 ms, `POST_COUNTDOWN_SHUFFLE_MS`, right after a countdown — the suspense is already built), then sets the full winner and appends to history.
   - `runDigitRaffleStep` (manual mode): first call generates the winner and reveals digit 1; each subsequent call increments `revealedCount`; history is appended only when the last digit is revealed.
-  - `runWithCountdown(cb)` wraps either path: if countdown is enabled it ticks `currentCount` down each second, then a dramatic pause (`currentCount === SUSPENSE`, `SUSPENSE_MS` 1200), then `'¡MATRACA!'` for 800 ms, then runs `cb`. `CountdownOverlay` derives `--tension` (0→1) from the number via `countdownTension()` to drive size, color, pulse speed and heartbeat sound. `currentCount !== null` doubles as the "countdown active" flag and blocks new raffles.
+  - `runWithCountdown(cb)` wraps either path: if countdown is enabled it ticks `currentCount` down each second, then a dramatic pause (`currentCount === SUSPENSE`, `SUSPENSE_MS` 1200), then `'¡MATRACA!'` for 800 ms, then runs `cb(afterCountdown = true)` (`cb(false)` when the countdown is off). `CountdownOverlay` derives `--tension` (0→1) from the number via `countdownTension()` to drive size, color, pulse speed and heartbeat sound. `currentCount !== null` doubles as the "countdown active" flag and blocks new raffles.
   - Every raffle timeout goes through the context's `schedule()` helper so `resetRaffle()` / unmount can cancel it — don't call `setTimeout` directly there.
   - Winners come from `pickWinner()` in `src/utils/random.js` (`crypto.getRandomValues`, rejection sampling). With no-repeat on (default), numbers already in `history` with the current digit count are excluded; `availableCount === 0` disables raffling. Deleting a history entry makes that number available again.
 - **"Finished" is derived, not stored**: `winner && revealedCount === digitCount`. `App.jsx` (`RaffleContent`) watches this and fires `runWinnerCelebration()` from `src/utils/confettiEffects.js`.

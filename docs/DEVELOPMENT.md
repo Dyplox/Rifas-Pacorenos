@@ -37,7 +37,7 @@ pnpm test src/context/RaffleContext.test.jsx   # un archivo
 pnpm test -t "no-repeat"                        # tests cuyo nombre coincide
 ```
 
-- Los tests del contexto usan `vi.useFakeTimers()` y las constantes de tiempo exportadas (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `GO_MESSAGE_MS`) para avanzar la animación.
+- Los tests del contexto usan `vi.useFakeTimers()` y las constantes de tiempo exportadas (`TRADITIONAL_SHUFFLE_MS`, `DIGIT_STEP_MS`, `POST_COUNTDOWN_SHUFFLE_MS`, `GO_MESSAGE_MS`, `SUSPENSE_MS`) para avanzar la animación.
 - La configuración inicial se pone en `localStorage` antes de renderizar (p. ej. `raffle_isCountdownEnabled = 'false'`).
 - `App.test.jsx` mockea `canvas-confetti`, porque jsdom no tiene canvas.
 
