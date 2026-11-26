@@ -8,13 +8,13 @@
 ## Configuración inicial
 
 ```bash
-git clone https://github.com/abelgutierrezarias/Rifas-Pacorenos.git
+git clone https://github.com/Dyplox/Rifas-Pacorenos.git
 cd Rifas-Pacorenos
 pnpm install
 pnpm dev
 ```
 
-El servidor de desarrollo arranca en `http://localhost:5173`.
+El servidor de desarrollo arranca en `http://localhost:5173/Rifas-Pacorenos/` (por el `base` de Vite).
 
 ## Comandos disponibles
 
@@ -23,7 +23,9 @@ El servidor de desarrollo arranca en `http://localhost:5173`.
 | `pnpm dev` | Servidor de desarrollo con HMR |
 | `pnpm build` | Build de producción en `dist/` |
 | `pnpm preview` | Vista previa del build de producción |
-| `pnpm lint` | ESLint sobre todos los archivos `src/` |
+| `pnpm lint` | ESLint sobre todos los archivos `.js`/`.jsx` del repo (excepto `dist/`) |
+
+No hay suite de tests: verificar cambios con `pnpm lint`, `pnpm build` y prueba manual en el navegador.
 
 ## Convenciones de código
 
@@ -38,13 +40,15 @@ El servidor de desarrollo arranca en `http://localhost:5173`.
 
 ```jsx
 // Importaciones primero, luego el componente
+import { memo } from 'react';
 import { useRaffle } from '../context/RaffleContext';
 
-// Memoizar componentes que reciben props estables
-const MiComponente = React.memo(function MiComponente({ prop }) {
+const MiComponente = memo(({ prop }) => {
   const { winner } = useRaffle();
   // ...
 });
+
+MiComponente.displayName = 'MiComponente';
 
 export default MiComponente;
 ```
@@ -53,24 +57,29 @@ export default MiComponente;
 
 - Las variables CSS globales están en `:root` dentro de `src/index.css`
 - Clases en kebab-case: `.raffle-display`, `.digit-box`
-- Animaciones definidas con `@keyframes` al final del archivo de estilos
+- Animaciones definidas con `@keyframes` junto a la sección que las usa
+- Breakpoints responsive: `@media (max-width: 1024px)` y `@media (max-width: 640px)`
 
 ### Variables CSS principales
 
 ```css
---color-gold: #fbbf24;
---color-gold-dim: #b45309;
---color-bg: #0f0f13;
---color-card: rgba(255, 255, 255, 0.05);
---color-green: #58892B;
+--bg-dark: #0f0f13;
+--bg-card: #1a1a20;
+--primary-gold: #fbbf24;
+--primary-gold-dim: #b45309;
+--text-main: #ffffff;
+--text-muted: #9ca3af;
+--accent-glow: rgba(251, 191, 36, 0.2);
 ```
+
+El verde Pacoreños (`#58892B`) no es una variable CSS; se usa directamente (p. ej. `rgba(88, 137, 43, …)`).
 
 ## Agregar un nuevo componente
 
 1. Crear `src/components/NuevoComponente.jsx`
 2. Si necesita estado global, consumir `useRaffle()` del contexto
 3. Si necesita persistencia local, usar `useLocalStorage`
-4. Exportar como default y memoizar con `React.memo` si recibe props que no cambian frecuentemente
+4. Exportar como default, envolver con `memo` y asignar `displayName`
 5. Añadir los estilos en `src/index.css` bajo un comentario de sección
 
 ## Modificar la lógica de la rifa
@@ -82,16 +91,17 @@ Toda la lógica del sorteo vive en `src/context/RaffleContext.jsx`. Las funcione
 - `runTraditionalRaffle()` — modo tradicional (todo de golpe)
 - `runDigitRaffleStep()` — modo manual (dígito a dígito)
 - `runWithCountdown()` — envuelve cualquier callback con el countdown opcional
+- `resetRaffle()` — cancela el countdown y limpia el estado de la rifa
 
 ## Agregar un nuevo efecto de celebración
 
-Los efectos están en `src/utils/confettiEffects.js`. Exporta `triggerSuperCelebration()` que se llama desde `App.jsx` cuando `winner` cambia.
+Los efectos están en `src/utils/confettiEffects.js`. Exporta `runWinnerCelebration()`, que se llama desde `RaffleContent` en `App.jsx` cuando la rifa termina (`winner && revealedCount === digitCount`).
 
-Para agregar un nuevo efecto, crear una función auxiliar dentro del archivo y llamarla desde `triggerSuperCelebration()`. Usar `setTimeout` para escalonar los efectos en el tiempo.
+Para agregar un efecto continuo, añadir una llamada a `confetti()` dentro de la función `frame()` (bucle `requestAnimationFrame` que dura `CELEBRATION_DURATION`, 5 s); para efectos esporádicos, condicionarla con `Math.random() < p`. Para un efecto único al inicio, añadirlo junto al "Initial Massive Blast".
 
 ## Linting
 
-El proyecto usa ESLint 9 con las reglas de `eslint-plugin-react` y `eslint-plugin-react-hooks`. Para corregir automáticamente:
+El proyecto usa ESLint 9 (flat config en `eslint.config.js`) con `@eslint/js` recommended, `eslint-plugin-react-hooks` y `eslint-plugin-react-refresh`. `no-unused-vars` ignora variables que empiezan por mayúscula o `_`. Para corregir automáticamente:
 
 ```bash
 pnpm lint --fix
@@ -104,5 +114,5 @@ pnpm lint --fix
 - Los efectos de confetti se pueden probar abriendo la consola y ejecutando:
 
 ```js
-import('/src/utils/confettiEffects.js').then(m => m.triggerSuperCelebration())
+import('/Rifas-Pacorenos/src/utils/confettiEffects.js').then(m => m.runWinnerCelebration())
 ```

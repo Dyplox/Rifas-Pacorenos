@@ -2,24 +2,36 @@
 
 ## GitHub Pages (producción)
 
-El despliegue está completamente automatizado con GitHub Actions. Cada push a `main` desencadena el workflow de CI/CD.
+El despliegue está automatizado con GitHub Actions usando el despliegue nativo de Pages (artefacto + `actions/deploy-pages`), no una rama `gh-pages`.
 
 ### URL de producción
 
 ```
-https://abelgutierrezarias.github.io/Rifas-Pacorenos/
+https://dyplox.github.io/Rifas-Pacorenos/
 ```
 
 ### Workflow (`.github/workflows/deploy.yml`)
 
+Se dispara con:
+
+- push a `main`
+- push a `feature/ux-pacorenos-medellin`
+- ejecución manual (`workflow_dispatch`)
+
 ```
-push a main
+job build
   └─ checkout del código
-       └─ setup Node 20 + pnpm 9
-            └─ pnpm install
-                 └─ pnpm build
-                      └─ deploy dist/ → gh-pages branch
+       └─ setup pnpm 9 + Node 20 (con caché de pnpm)
+            └─ pnpm install --frozen-lockfile
+                 └─ pnpm run build
+                      └─ configure-pages + upload-pages-artifact (./dist)
+job deploy (needs: build)
+  └─ actions/deploy-pages → entorno github-pages
 ```
+
+El workflow no ejecuta lint. Solo un despliegue corre a la vez (`concurrency: pages`, cancela el anterior).
+
+> Como `pnpm install` usa `--frozen-lockfile`, cualquier cambio de dependencias debe incluir el `pnpm-lock.yaml` actualizado o el build falla.
 
 ### Configuración del base path
 
@@ -27,12 +39,12 @@ Vite necesita saber que la app vive bajo `/Rifas-Pacorenos/` y no en la raíz de
 
 ```js
 export default defineConfig({
-  base: '/Rifas-Pacorenos/',
   plugins: [react()],
+  base: '/Rifas-Pacorenos/',
 })
 ```
 
-Sin este `base`, los assets (JS, CSS, imágenes) no se cargarían en GitHub Pages.
+Sin este `base`, los assets (JS, CSS, imágenes) no se cargarían en GitHub Pages. Si se renombra el repositorio, hay que actualizarlo.
 
 ## Despliegue manual
 
@@ -59,7 +71,7 @@ base: '/mi-subpath/'
 
 ## Variables de entorno
 
-La app no usa variables de entorno de servidor. Toda la configuración es en cliente vía `localStorage`.
+La app no usa variables de entorno. Toda la configuración es en cliente vía `localStorage`.
 
 Si en el futuro se agregan variables de entorno de build, definirlas en un archivo `.env` (no comiteado) y exponerlas con el prefijo `VITE_`:
 
@@ -78,4 +90,5 @@ const valor = import.meta.env.VITE_MI_VARIABLE;
 | Rama | Acción |
 |------|--------|
 | `main` | Deploy automático a producción (GitHub Pages) |
-| Otras ramas | Solo CI (lint + build), sin deploy |
+| `feature/ux-pacorenos-medellin` | También despliega a producción (mismo entorno) |
+| Otras ramas | Sin workflow (no hay CI de lint/build) |
