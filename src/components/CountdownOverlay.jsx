@@ -1,6 +1,6 @@
 import { memo, useEffect } from 'react';
 import { useRaffle, GO_MESSAGE, SUSPENSE, SUSPENSE_MS } from '../context/RaffleContext';
-import { playGo, playHeartbeat, playRiser } from '../utils/sound';
+import { playGo, playHeartbeat, startDrumRoll } from '../utils/sound';
 import { countdownTension } from '../utils/countdown';
 
 const CountdownOverlay = memo(() => {
@@ -14,7 +14,8 @@ const CountdownOverlay = memo(() => {
     useEffect(() => {
         if (!isSoundEnabled || currentCount === null) return;
         if (currentCount === GO_MESSAGE) playGo();
-        else if (currentCount === SUSPENSE) playRiser(SUSPENSE_MS);
+        // The roll keeps going until the number is revealed (stopped in App.jsx)
+        else if (currentCount === SUSPENSE) startDrumRoll();
         else playHeartbeat(countdownTension(currentCount, countdownDuration));
     }, [currentCount, countdownDuration, isSoundEnabled]);
 
