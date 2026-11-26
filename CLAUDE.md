@@ -53,7 +53,7 @@ CI: `.github/workflows/ci.yml` runs `verify` (lint + test + build) and `e2e` (Pl
 
 ## Deployment
 
-GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages on push to `main` (and `feature/ux-pacorenos-medellin`). `vite.config.js` sets `base: '/Rifas-Pacorenos/'` — it must match the repo name or assets will 404 on Pages.
+GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages on push to `main` only (or manual dispatch). `vite.config.js` sets `base: '/Rifas-Pacorenos/'` — it must match the repo name or assets will 404 on Pages.
 
 ## Docs
 
