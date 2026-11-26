@@ -5,4 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/Rifas-Pacorenos/', // Base path for GitHub Pages (your repo name)
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    restoreMocks: true,
+  },
 })
