@@ -22,7 +22,6 @@ Se ejecuta en cada pull request (y manualmente), con dos jobs en paralelo. No de
 Se dispara con:
 
 - push a `main`
-- push a `feature/ux-pacorenos-medellin`
 - ejecución manual (`workflow_dispatch`)
 
 ```
@@ -111,5 +110,4 @@ const valor = import.meta.env.VITE_MI_VARIABLE;
 | Rama | Acción |
 |------|--------|
 | `main` | Deploy automático a producción (GitHub Pages) |
-| `feature/ux-pacorenos-medellin` | También despliega a producción (mismo entorno) |
 | Pull requests | CI: lint + tests + build, sin deploy |

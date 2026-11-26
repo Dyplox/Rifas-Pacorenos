@@ -49,4 +49,4 @@ App de rifas digitales en vivo para la comunidad Pacoreños en Medellín. Sortea
 - Dependabot semanal (npm) y mensual (GitHub Actions)
 - Skills de optimización de tokens instalados: `project-snapshot`, `token-optimizer`, `session-compact`
 - Hooks automáticos configurados en `~/.claude/settings.json` (SessionStart + Stop)
-- Deploy activo en GitHub Pages bajo `/Rifas-Pacorenos/` (push a `main` o `feature/ux-pacorenos-medellin`)
+- Deploy activo en GitHub Pages bajo `/Rifas-Pacorenos/` (solo push a `main` o ejecución manual)
