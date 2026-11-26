@@ -30,7 +30,7 @@ Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 - **Historial persistente** de ganadores con nombres editables, fecha y hora, borrado individual y exportación a CSV
 - **Atajo de teclado**: Espacio o Enter para sortear / revelar el siguiente dígito
 - **Pantalla completa** para proyector
-- **Sonido opcional** (cuenta regresiva, revelación y fanfarria del ganador)
+- **Sonido opcional**: latidos durante la cuenta regresiva, redoble de tambor desde la pausa hasta que aparece el número, y platillo con aplausos para el ganador
 - **Respeta `prefers-reduced-motion`**: sin confetti ni animaciones si el sistema lo pide
 - **Celebración** con confetti, globos y fuegos artificiales al anunciar el ganador
 - **Configuración persistente** en `localStorage`, con opción **Borrar caché y datos** para dejar la app como recién instalada

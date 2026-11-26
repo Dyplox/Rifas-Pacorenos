@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, memo } from 'react';
 import { RaffleProvider, useRaffle } from './context/RaffleContext';
 import { runWinnerCelebration } from './utils/confettiEffects';
-import { playFanfare, playReveal } from './utils/sound';
+import { playReveal, playWinnerSound, stopDrumRoll } from './utils/sound';
 import FullscreenButton from './components/FullscreenButton';
 import Layout from './components/Layout';
 import RaffleDisplay from './components/RaffleDisplay';
@@ -43,16 +43,24 @@ const RaffleContent = memo(({ shortcutsEnabled }) => {
     }
   }, [isFinished]);
 
-  // Sounds: fanfare on winner, blip on each intermediate manual reveal
+  // Sounds: when the number shows, the drum roll ends in a crash + applause
+  // (or a short blip for an intermediate digit in manual mode)
   const playRevealSound = useLatestCallback((isLastDigit) => {
     if (!isSoundEnabled) return;
-    if (isLastDigit) playFanfare();
+    if (isLastDigit) playWinnerSound();
     else playReveal();
   });
   useEffect(() => {
     if (!winner || revealedCount === 0) return;
     playRevealSound(revealedCount === digitCount);
   }, [winner, revealedCount, digitCount, playRevealSound]);
+
+  // Never leave the drum roll playing on its own: stop it when nothing is in progress
+  // (raffle cancelled, no numbers left) or when sound is turned off
+  useEffect(() => {
+    if (!isSoundEnabled || (!isRaffling && currentCount === null)) stopDrumRoll();
+  }, [isSoundEnabled, isRaffling, currentCount]);
+  useEffect(() => stopDrumRoll, []);
 
   const handleRaffleClick = () => {
     if (isManualRevealEnabled) {
