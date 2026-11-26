@@ -134,15 +134,16 @@ Los efectos están en `src/utils/confettiEffects.js`. Exporta `runWinnerCelebrat
 
 Para agregar un efecto continuo, añadir una llamada a `confetti()` dentro de la función `frame()` (bucle `requestAnimationFrame` que dura `CELEBRATION_DURATION`, 5 s); para efectos esporádicos, condicionarla con `Math.random() < p`. Para un efecto único al inicio, añadirlo junto al "Initial Massive Blast".
 
-## Diseño responsive
+## Diseño responsive (todo en una sola vista)
 
-El tamaño de los dígitos se calcula solo en CSS (`.digit-box` en `src/index.css`): `.card-raffle` es un *container* (`container-type: inline-size`) y `RaffleDisplay` pasa `--digits`. Cada caja toma el mínimo entre:
+La app ocupa exactamente el alto de la pantalla, pie de página incluido; solo hace scroll si la pantalla es demasiado baja para lo esencial (móvil horizontal). Todo está en `src/index.css`:
 
-1. el ancho disponible repartido entre los dígitos (`100cqi`),
-2. `30dvh`, y
-3. el alto que queda tras el resto de la interfaz (`--stage-chrome`, medido con Playwright), para que el mensaje del ganador quepa sin scroll.
+- `main` es una columna flex de `height: 100dvh`: header + contenido + footer.
+- **Pantallas anchas (> 1024 px):** cuadrícula historial | escenario. La tarjeta del sorteo toma el alto que sobra y `.digit-container` es un *size container*: cada caja mide `min(ancho / --digits, alto / 1.35)` (`100cqw`, `100cqh`), así que los dígitos llenan el espacio disponible. El historial hace scroll dentro de su panel.
+- **Pantallas estrechas (≤ 1024 px):** el escenario va arriba (dígitos limitados por el ancho y a `24dvh`) y el historial debajo (`order: 1`) ocupa el resto del alto con scroll interno. En móviles pequeños (≤ 640 × 760) se compacta todo y el título de la tarjeta del ganador queda solo para lectores de pantalla.
+- La tarjeta del ganador siempre reserva su espacio (marcador punteado "Aquí aparecerá el ganador"), para que nada salte al aparecer el ganador.
 
-Si cambias tamaños del header, botón o tarjeta del ganador, ejecuta `pnpm test:e2e layout`: el test "winner message visible" detecta si algo deja de caber, y `layout.spec.js` replica la fórmula de la altura.
+`layout.spec.js` lo verifica en cada tamaño: sin scroll de página, footer, botón, ganador y primera entrada del historial visibles, historial debajo en pantallas estrechas, y dígitos llenando su espacio. Tras cambiar tamaños, ejecuta `pnpm test:e2e layout` y revisa capturas con `SCREENSHOTS=1 pnpm test:e2e screenshots`.
 
 ## Listeners con estado actual
 
