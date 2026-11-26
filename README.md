@@ -14,7 +14,7 @@ Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 | Build tool | Vite 7 |
 | Estilos | CSS puro con variables |
 | Animaciones | canvas-confetti |
-| Sonido | Web Audio API (sin archivos de audio) |
+| Sonido | howler.js (grabaciones en `public/sounds/`) + Web Audio API (tonos) |
 | PWA | vite-plugin-pwa (Workbox): instalable y sin conexión |
 | Tests | Vitest + Testing Library (unitarios) · Playwright (e2e en 6 tamaños de pantalla) |
 | Gestor de paquetes | pnpm (versión fijada en `packageManager`) |
@@ -30,7 +30,7 @@ Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 - **Historial persistente** de ganadores con nombres editables, fecha y hora, borrado individual y exportación a CSV
 - **Atajo de teclado**: Espacio o Enter para sortear / revelar el siguiente dígito
 - **Pantalla completa** para proyector
-- **Sonido opcional**: latidos durante la cuenta regresiva, redoble de tambor desde la pausa hasta que aparece el número, y platillo con aplausos para el ganador
+- **Sonido opcional** con grabaciones reales: latidos durante la cuenta regresiva, redoble de tambor desde la pausa hasta que aparece el número, golpe final y aplausos para el ganador (créditos en la app)
 - **Respeta `prefers-reduced-motion`**: sin confetti ni animaciones si el sistema lo pide
 - **Celebración** con confetti, globos y fuegos artificiales al anunciar el ganador
 - **Configuración persistente** en `localStorage`, con opción **Borrar caché y datos** para dejar la app como recién instalada
