@@ -10,7 +10,11 @@ El despliegue está automatizado con GitHub Actions usando el despliegue nativo 
 https://dyplox.github.io/Rifas-Pacorenos/
 ```
 
-### Workflow (`.github/workflows/deploy.yml`)
+### CI (`.github/workflows/ci.yml`)
+
+Se ejecuta en cada pull request (y manualmente): `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test` → `pnpm run build`. No despliega nada.
+
+### Workflow de deploy (`.github/workflows/deploy.yml`)
 
 Se dispara con:
 
@@ -21,17 +25,19 @@ Se dispara con:
 ```
 job build
   └─ checkout del código
-       └─ setup pnpm 9 + Node 20 (con caché de pnpm)
+       └─ setup pnpm 9 + Node 22 (con caché de pnpm)
             └─ pnpm install --frozen-lockfile
-                 └─ pnpm run build
+                 └─ pnpm lint
+                      └─ pnpm test
+                           └─ pnpm run build
                       └─ configure-pages + upload-pages-artifact (./dist)
 job deploy (needs: build)
   └─ actions/deploy-pages → entorno github-pages
 ```
 
-El workflow no ejecuta lint. Solo un despliegue corre a la vez (`concurrency: pages`, cancela el anterior).
+Si el lint o los tests fallan, no se despliega. Solo un despliegue corre a la vez (`concurrency: pages`, cancela el anterior).
 
-> Como `pnpm install` usa `--frozen-lockfile`, cualquier cambio de dependencias debe incluir el `pnpm-lock.yaml` actualizado o el build falla.
+> Como `pnpm install` usa `--frozen-lockfile`, cualquier cambio de dependencias debe incluir el `pnpm-lock.yaml` actualizado o el build falla. El lockfile debe seguir en `lockfileVersion: '9.0'` para que lo lea el pnpm 9 del CI.
 
 ### Configuración del base path
 
@@ -91,4 +97,4 @@ const valor = import.meta.env.VITE_MI_VARIABLE;
 |------|--------|
 | `main` | Deploy automático a producción (GitHub Pages) |
 | `feature/ux-pacorenos-medellin` | También despliega a producción (mismo entorno) |
-| Otras ramas | Sin workflow (no hay CI de lint/build) |
+| Pull requests | CI: lint + tests + build, sin deploy |

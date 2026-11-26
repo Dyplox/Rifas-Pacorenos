@@ -14,15 +14,23 @@ Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 | Build tool | Vite 7 |
 | Estilos | CSS puro con variables |
 | Animaciones | canvas-confetti |
+| Sonido | Web Audio API (sin archivos de audio) |
+| Tests | Vitest + Testing Library (jsdom) |
 | Gestor de paquetes | pnpm |
-| CI/CD | GitHub Actions → GitHub Pages |
+| CI/CD | GitHub Actions (CI en PRs, deploy a GitHub Pages) |
 
 ## Características principales
 
 - **Modo tradicional** — todos los dígitos se revelan de golpe con animación de barajado
 - **Modo manual** — revelación dígito a dígito para mayor suspenso
 - **Cuenta regresiva** configurable (3-10 segundos, activada por defecto) con overlay a pantalla completa
-- **Historial persistente** de ganadores con nombres editables y timestamps
+- **Sin números repetidos** (opcional, activado por defecto): los números ya sorteados se excluyen y se muestra cuántos quedan
+- **Sorteo con `crypto.getRandomValues()`**, uniforme y sin sesgo
+- **Historial persistente** de ganadores con nombres editables, fecha y hora, borrado individual y exportación a CSV
+- **Atajo de teclado**: Espacio o Enter para sortear / revelar el siguiente dígito
+- **Pantalla completa** para proyector
+- **Sonido opcional** (cuenta regresiva, revelación y fanfarria del ganador)
+- **Respeta `prefers-reduced-motion`**: sin confetti ni animaciones si el sistema lo pide
 - **Celebración** con confetti, globos y fuegos artificiales al anunciar el ganador
 - **Configuración persistente** en `localStorage`
 - **Responsive** — funciona en escritorio, tableta, móvil y pantallas de proyector
@@ -44,6 +52,9 @@ pnpm preview
 
 # Linting
 pnpm lint
+
+# Tests
+pnpm test
 ```
 
 ## Estructura del proyecto
@@ -60,6 +71,7 @@ src/
 │   ├── RaffleHistory.jsx       # Panel lateral de ganadores
 │   ├── SettingsPanel.jsx       # Modal de configuración
 │   ├── CountdownOverlay.jsx    # Overlay de cuenta regresiva
+│   ├── FullscreenButton.jsx    # Botón de pantalla completa
 │   ├── Layout.jsx              # Contenedor principal
 │   └── Footer.jsx              # Pie de página con marca
 ├── context/
@@ -67,7 +79,10 @@ src/
 ├── hooks/
 │   └── useLocalStorage.js      # Hook de persistencia en localStorage
 └── utils/
-    └── confettiEffects.js      # runWinnerCelebration(): confetti, globos y fuegos
+    ├── confettiEffects.js      # runWinnerCelebration(): confetti, globos y fuegos
+    ├── random.js               # Azar con crypto, selección sin repetidos, IDs
+    ├── historyExport.js        # Fecha del historial y exportación CSV
+    └── sound.js                # Efectos de sonido con Web Audio
 ```
 
 ## Documentación adicional
@@ -85,8 +100,6 @@ src/
 | Dorado oscuro | `#b45309` | Gradientes y sombras |
 | Verde Pacoreños | `#58892B` | Último ganador del historial, "¡MATRACA!" y confetti |
 | Amarillo Medellín | `#F6BB31` | Confetti de celebración |
-
-No hay suite de tests; `pnpm lint` y `pnpm build` son la verificación disponible.
 | Fondo oscuro | `#0f0f13` | Fondo general de la app |
 
 ## Licencia

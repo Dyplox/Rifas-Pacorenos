@@ -52,7 +52,21 @@ No existe un flag `isCountingDown`: `currentCount !== null` cumple esa función 
 | `raffle_isManualRevealEnabled` | `boolean` | `false` |
 | `raffle_isCountdownEnabled` | `boolean` | `true` |
 | `raffle_countdownDuration` | `number` | `3` |
+| `raffle_isNoRepeatEnabled` | `boolean` | `true` |
+| `raffle_isSoundEnabled` | `boolean` | `false` |
 | `raffle_history` | `array` | `[]` |
+
+`raffle_digitCount` (1–5), `raffle_countdownDuration` (3–10) y `raffle_history` (array de entradas con `number` string) se validan al leerse; un valor inválido se reemplaza por el default.
+
+## Generación del ganador
+
+`generateWinner()` llama a `pickWinner()` (`src/utils/random.js`), que usa `crypto.getRandomValues()` con muestreo por rechazo para que todos los números sean igual de probables.
+
+Con **no repetir** activo, se excluyen los números del historial que tienen la cantidad de dígitos actual (un `042` sorteado con 3 dígitos no excluye nada con 4). `availableCount` es `10 ** digitCount` menos los excluidos; cuando llega a 0 no se puede iniciar otra rifa. Borrar una entrada del historial devuelve su número al sorteo.
+
+## Temporizadores
+
+Todos los `setTimeout` de la rifa (barajado, pasos manuales, mensaje `'¡MATRACA!'`) se crean con `schedule()`, que guarda los IDs en un `ref`. `cancelPendingTimers()` limpia esos timeouts y el intervalo del countdown; se llama al iniciar otro countdown, en `resetRaffle()` (por ejemplo al cambiar los dígitos o borrar el historial) y al desmontar el proveedor. Así un reinicio en plena animación no deja aparecer un ganador "fantasma".
 
 ## Flujos principales
 
@@ -71,7 +85,7 @@ runWithCountdown(callback)
 
 ```
 click "Iniciar Rifa"
-  └─ runTraditionalRaffle()          ← ignora el click si isRaffling o hay countdown
+  └─ runTraditionalRaffle()          ← ignora el click si isRaffling, hay countdown o no quedan números
        └─ runWithCountdown(executeRaffle)
             └─ executeRaffle(): isRaffling = true, winner = null
                  └─ setTimeout(800ms)
@@ -85,8 +99,9 @@ click "Iniciar Rifa"
 ```
 click "Revelar Dígito" / "Revelar Siguiente"
   └─ runDigitRaffleStep()
-       ├─ Si no hay winner o ya está completo:
+       ├─ Si no hay winner o ya está completo (y quedan números):
        │    runWithCountdown → setTimeout(500ms) → generateWinner(), revealedCount = 1
+       │    (con 1 solo dígito, se agrega al historial aquí)
        └─ Si faltan dígitos:
             runWithCountdown → setTimeout(500ms) → revealedCount++
                  └─ Si era el último → agrega a history (+ celebración en App.jsx)
@@ -100,11 +115,15 @@ El countdown se ejecuta antes de **cada** paso del modo manual, si está activad
 - `useMemo` para las cajas de dígitos, el texto del botón y el valor del contexto
 - `useCallback` en todos los handlers del contexto
 - `canvas-confetti` + bucle `requestAnimationFrame` para la celebración
-- El intervalo del countdown se guarda en un `ref` y se limpia al iniciar otro countdown o al llamar `resetRaffle()`
+- Los temporizadores se cancelan al reiniciar y al desmontar (ver "Temporizadores")
 
 ## Persistencia
 
-El hook `useLocalStorage` detecta el tipo del valor inicial (boolean, number, object/array) y deserializa en consecuencia (`'true'`, `parseInt`, `JSON.parse`). Al escribir usa `JSON.stringify` para objetos y `String()` para el resto. Ante cualquier error de lectura, retorna el valor por defecto y emite un `console.warn`.
+El hook `useLocalStorage` detecta el tipo del valor inicial (boolean, number, object/array) y deserializa en consecuencia, rechazando valores que no encajan (p. ej. `'abc'` para un número). Acepta una función `validate` opcional. Al escribir usa `JSON.stringify` para objetos y `String()` para el resto. Ante cualquier error de lectura o validación, retorna el valor por defecto y emite un `console.warn`.
+
+## Efectos del ganador
+
+`RaffleContent` (en `App.jsx`) reacciona a los cambios de `winner`/`revealedCount`: confetti (`runWinnerCelebration`, que no hace nada con `prefers-reduced-motion`) y, si el sonido está activo, fanfarria o sonido de revelación. `CountdownOverlay` reproduce los sonidos del countdown. `src/index.css` termina con un override global de `prefers-reduced-motion` que anula animaciones y transiciones.
 
 ## Despliegue
 
