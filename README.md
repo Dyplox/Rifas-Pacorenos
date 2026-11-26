@@ -15,9 +15,10 @@ Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 | Estilos | CSS puro con variables |
 | Animaciones | canvas-confetti |
 | Sonido | Web Audio API (sin archivos de audio) |
-| Tests | Vitest + Testing Library (jsdom) |
-| Gestor de paquetes | pnpm |
-| CI/CD | GitHub Actions (CI en PRs, deploy a GitHub Pages) |
+| PWA | vite-plugin-pwa (Workbox): instalable y sin conexión |
+| Tests | Vitest + Testing Library (unitarios) · Playwright (e2e en 6 tamaños de pantalla) |
+| Gestor de paquetes | pnpm (versión fijada en `packageManager`) |
+| CI/CD | GitHub Actions (CI en PRs, deploy a GitHub Pages) · Dependabot |
 
 ## Características principales
 
@@ -33,7 +34,9 @@ Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
 - **Respeta `prefers-reduced-motion`**: sin confetti ni animaciones si el sistema lo pide
 - **Celebración** con confetti, globos y fuegos artificiales al anunciar el ganador
 - **Configuración persistente** en `localStorage`
-- **Responsive** — funciona en escritorio, tableta, móvil y pantallas de proyector
+- **Responsive y a gran tamaño** — los dígitos ocupan todo el ancho o alto disponible en móvil, tableta, portátil y proyector, dejando siempre visibles el botón y el mensaje del ganador
+- **Funciona sin internet (PWA)** — tras la primera visita se puede instalar y usar sin conexión; un aviso indica cuando no hay red
+- **Accesible** — configuración en un diálogo con teclado (Esc, foco atrapado), anuncios para lectores de pantalla, objetivos táctiles de 44 px, deshacer al borrar
 
 ## Inicio rápido
 
@@ -53,9 +56,14 @@ pnpm preview
 # Linting
 pnpm lint
 
-# Tests
+# Tests unitarios
 pnpm test
+
+# Tests end-to-end (la primera vez: pnpm exec playwright install chromium)
+pnpm test:e2e
 ```
+
+Requiere Node.js ≥ 22.12 y pnpm 12 (`corepack enable` usa la versión de `packageManager`).
 
 ## Estructura del proyecto
 
@@ -72,17 +80,24 @@ src/
 │   ├── SettingsPanel.jsx       # Modal de configuración
 │   ├── CountdownOverlay.jsx    # Overlay de cuenta regresiva
 │   ├── FullscreenButton.jsx    # Botón de pantalla completa
+│   ├── Modal.jsx               # Diálogo accesible (base de configuración y confirmaciones)
+│   ├── ConfirmDialog.jsx       # Confirmación con estilo propio
+│   ├── UndoToast.jsx           # Aviso con "Deshacer"
 │   ├── Layout.jsx              # Contenedor principal
 │   └── Footer.jsx              # Pie de página con marca
 ├── context/
 │   └── RaffleContext.jsx       # Estado global con Context API
 ├── hooks/
-│   └── useLocalStorage.js      # Hook de persistencia en localStorage
+│   ├── useLocalStorage.js      # Persistencia en localStorage con validación
+│   ├── useLatestCallback.js    # Callback estable que ve el estado actual (listeners)
+│   └── useOnlineStatus.js      # Estado de conexión (aviso "Sin conexión")
 └── utils/
     ├── confettiEffects.js      # runWinnerCelebration(): confetti, globos y fuegos
     ├── random.js               # Azar con crypto, selección sin repetidos, IDs
     ├── historyExport.js        # Fecha del historial y exportación CSV
     └── sound.js                # Efectos de sonido con Web Audio
+e2e/                            # Tests Playwright (layout responsive, flujo, PWA)
+public/                         # Favicon e iconos de la PWA
 ```
 
 ## Documentación adicional

@@ -12,7 +12,10 @@ https://dyplox.github.io/Rifas-Pacorenos/
 
 ### CI (`.github/workflows/ci.yml`)
 
-Se ejecuta en cada pull request (y manualmente): `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test` → `pnpm run build`. No despliega nada.
+Se ejecuta en cada pull request (y manualmente), con dos jobs en paralelo. No despliega nada.
+
+- `verify`: `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test` → `pnpm run build`
+- `e2e`: instala Chromium y ejecuta `pnpm test:e2e` (6 tamaños de pantalla, flujo con teclado, PWA sin conexión). Si falla, sube el reporte de Playwright como artefacto (`playwright-report`, 7 días).
 
 ### Workflow de deploy (`.github/workflows/deploy.yml`)
 
@@ -25,7 +28,7 @@ Se dispara con:
 ```
 job build
   └─ checkout del código
-       └─ setup pnpm 9 + Node 22 (con caché de pnpm)
+       └─ setup pnpm (versión de packageManager) + Node 22 (con caché)
             └─ pnpm install --frozen-lockfile
                  └─ pnpm lint
                       └─ pnpm test
@@ -37,7 +40,7 @@ job deploy (needs: build)
 
 Si el lint o los tests fallan, no se despliega. Solo un despliegue corre a la vez (`concurrency: pages`, cancela el anterior).
 
-> Como `pnpm install` usa `--frozen-lockfile`, cualquier cambio de dependencias debe incluir el `pnpm-lock.yaml` actualizado o el build falla. El lockfile debe seguir en `lockfileVersion: '9.0'` para que lo lea el pnpm 9 del CI.
+> Como `pnpm install` usa `--frozen-lockfile`, cualquier cambio de dependencias debe incluir el `pnpm-lock.yaml` actualizado o el build falla. La versión de pnpm se fija en el campo `packageManager` de `package.json`; `pnpm/action-setup` la lee de ahí, así que local y CI usan la misma.
 
 ### Configuración del base path
 
@@ -74,6 +77,18 @@ base: '/'
 // Para subpath personalizado
 base: '/mi-subpath/'
 ```
+
+## PWA y caché
+
+`vite-plugin-pwa` genera en el build `manifest.webmanifest`, `sw.js` (Workbox) y `registerSW.js`. El service worker precachea todo el build, así que tras la primera visita la app abre y funciona sin conexión.
+
+- Con `registerType: 'autoUpdate'`, cuando se despliega una versión nueva el service worker la descarga y la activa en la siguiente carga.
+- Los iconos (`public/pwa-192x192.png`, `pwa-512x512.png`, `maskable-512x512.png`, `apple-touch-icon.png`) se generaron a partir de `src/assets/images/pacomede.jpg`.
+- En `pnpm dev` el service worker está desactivado; para probarlo usar `pnpm build && pnpm preview` (o `pnpm test:e2e pwa`).
+
+## Dependabot
+
+`.github/dependabot.yml` abre PRs semanales para dependencias npm (un PR agrupado para minor/patch, uno por cada major) y mensuales para las GitHub Actions. El CI valida cada PR.
 
 ## Variables de entorno
 

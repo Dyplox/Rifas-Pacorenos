@@ -21,6 +21,8 @@ const CountdownOverlay = memo(() => {
     return (
         <div
             className="countdown-overlay"
+            role="timer"
+            aria-live="assertive"
             style={{
                 animationDuration: `0.2s, ${totalAnimationTime}s`
             }}
