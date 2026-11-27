@@ -1,10 +1,20 @@
 # Gran Rifa — Rifas Pacoreños
 
+[![CI](https://github.com/Dyplox/Rifas-Pacorenos/actions/workflows/ci.yml/badge.svg)](https://github.com/Dyplox/Rifas-Pacorenos/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Dyplox/Rifas-Pacorenos/actions/workflows/deploy.yml/badge.svg)](https://github.com/Dyplox/Rifas-Pacorenos/actions/workflows/deploy.yml)
+[![Demo](https://img.shields.io/badge/demo-GitHub%20Pages-0969da)](https://dyplox.github.io/Rifas-Pacorenos/)
+
 Aplicación web para realizar rifas digitales en vivo, diseñada para la comunidad **Pacoreños en Medellín**. Incluye efectos visuales de celebración, historial de ganadores y múltiples modos de revelación.
+
+## Propósito
+
+**Pacoreños en Medellín** es una organización sin ánimo de lucro que recoge fondos para la niñez de **Pácora, Caldas**: para dotar su ludoteca y para llevar a niños y niñas a Medellín a vivir experiencias inolvidables conociendo lugares reconocidos de la ciudad. Esta app hace que sus rifas en vivo sean transparentes (sorteo con `crypto.getRandomValues()`, sin números repetidos e historial exportable) y emocionantes para el público.
+
+> 🇬🇧 **English summary:** Live digital raffle web app for *Pacoreños en Medellín*, a non-profit that raises funds for children from Pácora, Caldas (Colombia). Built with React 19 + Vite, installable as an offline PWA, with fair `crypto`-based draws, suspense countdowns, sound and celebration effects. Tested with Vitest + Testing Library and Playwright across 6 screen sizes, and deployed to GitHub Pages through GitHub Actions.
 
 ## Demo
 
-Disponible en GitHub Pages: `https://dyplox.github.io/Rifas-Pacorenos/`
+Disponible en GitHub Pages: [dyplox.github.io/Rifas-Pacorenos](https://dyplox.github.io/Rifas-Pacorenos/)
 
 ## Tecnologías
 
